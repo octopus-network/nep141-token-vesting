@@ -6,7 +6,12 @@ use near_sdk::json_types::{U128, U64};
 use near_sdk::{AccountId, Balance, Promise};
 
 pub trait Viewer {
-    fn get_vesting(&self, from_index: u32, limit: u32) -> Vec<Vesting>;
+    fn get_vesting(
+        &self,
+        from_index: u32,
+        limit: u32,
+        beneficiary: Option<AccountId>,
+    ) -> Vec<Vesting>;
 
     fn get_claimable_amount(&self, vesting_id: VestingId) -> U128;
 }
