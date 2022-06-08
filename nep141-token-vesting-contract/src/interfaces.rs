@@ -7,6 +7,8 @@ use near_sdk::{AccountId, Balance, Promise};
 
 pub trait Viewer {
     fn get_vesting(&self, from_index: u32, limit: u32) -> Vec<Vesting>;
+
+    fn get_claimable_amount(&self, vesting_id: VestingId) -> U128;
 }
 
 pub trait OwnerAction {

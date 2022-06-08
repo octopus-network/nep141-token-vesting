@@ -140,7 +140,7 @@ impl<T: NaturalTime + VestingTokenInfoTrait> VestingAmount for T {
         let mut remain_time = if self.get_end_time() <= get_block_second_time() {
             0
         } else {
-            get_block_second_time() - self.get_end_time()
+            self.get_end_time() - get_block_second_time()
         };
         remain_time = min(remain_time, period);
         let unreleased_amount = U256::from(self.get_vesting_token_info().total_vesting_amount)
@@ -156,9 +156,16 @@ impl<T: VestingAmount + VestingTokenInfoTrait + Frozen> Claimable for T {
             !self.is_frozen(),
             "Failed to claim because this vesting is frozen."
         );
-        let claimable_amount = amount.unwrap_or(self.get_claimable_amount());
+        let claimable_amount = self.get_claimable_amount();
+        if amount.is_some() {
+            assert!(
+                amount.unwrap() <= claimable_amount,
+                "claimable amount is less than claim amount."
+            );
+        }
+
         self.set_claimed_token_amount(
-            self.get_vesting_token_info().claimed_token_amount + claimable_amount,
+            self.get_vesting_token_info().claimed_token_amount + amount.unwrap_or(claimable_amount),
         );
         claimable_amount
     }

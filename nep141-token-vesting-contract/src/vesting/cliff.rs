@@ -17,6 +17,8 @@ pub struct TimeCliffVesting {
 #[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CliffVestingCheckpoint {
+    #[serde(default)]
+    #[serde(with = "u64_dec_format")]
     pub time: SecondTimeStamp,
     #[serde(default)]
     #[serde(with = "u128_dec_format")]
@@ -84,36 +86,33 @@ mod tests {
     use crate::test::{usdc, usdt};
     use crate::vesting::traits::Claimable;
     use near_sdk::test_utils::test_env::bob;
+    use near_sdk::test_utils::VMContextBuilder;
+    use near_sdk::testing_env;
 
+    #[should_panic("claimable amount is less than claim amount.")]
     #[test]
     fn test_cliff_claim() {
-        let mut cliff = TimeCliffVesting {
-            beneficiary: bob(),
-            time_cliff_list: vec![],
-            vesting_token_info: VestingTokenInfo {
-                token_id: usdt(),
-                claimed_token_amount: 0,
-                total_vesting_amount: 12345,
-            },
-            is_frozen: false,
-        };
-        cliff.claim(Some(345));
-        assert_eq!(cliff.get_claimable_amount(), 12000);
-    }
+        let mut context = VMContextBuilder::new();
+        testing_env!(context.block_timestamp(2 * 1000_000_000).build());
 
-    #[test]
-    #[should_panic]
-    fn test_claim_error() {
-        let mut cliff = TimeCliffVesting {
+        let mut vesting = TimeCliffVesting {
             beneficiary: bob(),
-            time_cliff_list: vec![],
+            time_cliff_list: vec![
+                CliffVestingCheckpoint { time: 1, amount: 1 },
+                CliffVestingCheckpoint { time: 2, amount: 1 },
+                CliffVestingCheckpoint { time: 3, amount: 1 },
+            ],
             vesting_token_info: VestingTokenInfo {
                 token_id: usdt(),
                 claimed_token_amount: 0,
-                total_vesting_amount: 12345,
+                total_vesting_amount: 3,
             },
             is_frozen: false,
         };
-        cliff.claim(Some(123456));
+        assert_eq!(vesting.get_claimable_amount(), 2);
+        vesting.claim(Some(2));
+        assert_eq!(vesting.get_claimable_amount(), 0);
+        vesting.claim(Option::None);
+        vesting.claim(Some(1));
     }
 }
