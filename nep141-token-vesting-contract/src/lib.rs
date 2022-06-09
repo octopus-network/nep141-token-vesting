@@ -58,9 +58,10 @@ impl TokenVestingContract {
             .unwrap_or_default() as Balance
             * env::storage_byte_cost();
 
+        log!("storage cost {}", storage_cost);
         let refund = env::attached_deposit().checked_sub(storage_cost).expect(
             format!(
-                "ERR_STORAGE_DEPOSIT need {}, attatched {}",
+                "ERR_STORAGE_DEPOSIT need {}, attached {}",
                 storage_cost,
                 env::attached_deposit()
             )
