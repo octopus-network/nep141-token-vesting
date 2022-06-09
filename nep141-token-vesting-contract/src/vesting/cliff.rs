@@ -8,6 +8,7 @@ use near_sdk::{AccountId, Balance};
 #[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct TimeCliffVesting {
+    pub id: VestingId,
     pub beneficiary: AccountId,
     pub time_cliff_list: Vec<CliffVestingCheckpoint>,
     pub vesting_token_info: VestingTokenInfo,

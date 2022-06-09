@@ -19,9 +19,9 @@ pub mod traits;
 impl TokenVestingContract {
     pub(crate) fn internal_create_vesting(&mut self, param: VestingCreateParam) -> VestingId {
         self.assert_owner();
-        let prev_storage = env::storage_usage();
         let id = self.internal_assign_pool_id();
-        self.vestings.insert(&id, &Vesting::new(param));
+        let prev_storage = env::storage_usage();
+        self.vestings.insert(&id, &Vesting::new(id.clone(), param));
         self.internal_check_storage(prev_storage);
         id
     }
@@ -79,7 +79,7 @@ pub enum VestingCreateParam {
 }
 
 impl Vesting {
-    pub fn new(param: VestingCreateParam) -> Self {
+    pub fn new(id: VestingId, param: VestingCreateParam) -> Self {
         match param {
             VestingCreateParam::LinearVesting {
                 beneficiary,
@@ -88,6 +88,7 @@ impl Vesting {
                 total_vesting_amount,
                 token_id,
             } => Vesting::NaturalTimeLinearVesting(NaturalTimeLinearVesting {
+                id,
                 beneficiary,
                 start_time,
                 end_time,
@@ -112,6 +113,7 @@ impl Vesting {
                     })
                     .unwrap_or(0);
                 Vesting::TimeCliffVesting(TimeCliffVesting {
+                    id,
                     beneficiary,
                     time_cliff_list,
                     vesting_token_info: VestingTokenInfo {

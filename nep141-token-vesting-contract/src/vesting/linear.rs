@@ -8,6 +8,7 @@ use near_sdk::{AccountId, Balance};
 #[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct NaturalTimeLinearVesting {
+    pub id: VestingId,
     pub beneficiary: AccountId,
     pub start_time: SecondTimeStamp,
     pub end_time: SecondTimeStamp,
