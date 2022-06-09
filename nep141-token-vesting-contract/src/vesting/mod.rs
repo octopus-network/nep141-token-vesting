@@ -87,18 +87,22 @@ impl Vesting {
                 end_time,
                 total_vesting_amount,
                 token_id,
-            } => Vesting::NaturalTimeLinearVesting(NaturalTimeLinearVesting {
-                id,
-                beneficiary,
-                start_time,
-                end_time,
-                vesting_token_info: VestingTokenInfo {
-                    token_id,
-                    claimed_token_amount: 0,
-                    total_vesting_amount,
-                },
-                is_frozen: false,
-            }),
+            } => {
+                assert!(start_time<end_time, "End time should be less than start time when creating NaturalTimeLinearVesting.");
+
+                Vesting::NaturalTimeLinearVesting(NaturalTimeLinearVesting {
+                    id,
+                    beneficiary,
+                    start_time,
+                    end_time,
+                    vesting_token_info: VestingTokenInfo {
+                        token_id,
+                        claimed_token_amount: 0,
+                        total_vesting_amount,
+                    },
+                    is_frozen: false,
+                })
+            }
             VestingCreateParam::CliffVesting {
                 beneficiary,
                 time_cliff_list,
