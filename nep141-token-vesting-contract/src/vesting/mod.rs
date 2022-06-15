@@ -1,56 +1,22 @@
 use near_contract_standards::upgrade::Ownable;
+use near_sdk::json_types::U64;
 use near_sdk::{AccountId, Balance, BorshStorageKey};
 use std::cmp::min;
 
-use super::*;
+use crate::events::{EventEmit, UserAction, VestingEvent};
 use crate::types::{SecondTimeStamp, U256};
 use crate::utils::get_block_second_time;
 use crate::vesting::cliff::{CliffVestingCheckpoint, TimeCliffVesting};
 use crate::vesting::linear::NaturalTimeLinearVesting;
 use crate::vesting::traits::{
-    Claimable, Frozen, NaturalTime, VestingAmount, VestingTokenInfoTrait,
+    Beneficiary, Claimable, Frozen, NaturalTime, VestingAmount, VestingTokenInfoTrait,
 };
 use crate::vesting::VestingCreateParam::LinearVesting;
+use crate::*;
 
 pub mod cliff;
 pub mod linear;
 pub mod traits;
-
-impl TokenVestingContract {
-    pub(crate) fn internal_create_vesting(&mut self, param: VestingCreateParam) -> VestingId {
-        self.assert_owner();
-        let id = self.internal_assign_pool_id();
-        let prev_storage = env::storage_usage();
-        self.vestings.insert(&id, &Vesting::new(id.clone(), param));
-        self.internal_check_storage(prev_storage);
-        id
-    }
-
-    pub(crate) fn internal_assign_pool_id(&mut self) -> VestingId {
-        self.vesting_id += 1;
-        return self.vesting_id;
-    }
-
-    pub(crate) fn internal_get_vesting(&self, vesting_id: &VestingId) -> Option<Vesting> {
-        self.vestings.get(vesting_id)
-    }
-
-    pub(crate) fn internal_use_vesting<F, R>(&mut self, vesting_id: &VestingId, mut f: F) -> R
-    where
-        F: FnMut(&mut Vesting) -> R,
-    {
-        let mut vesting = self
-            .internal_get_vesting(&vesting_id)
-            .expect("No such vesting");
-        let r = f(&mut vesting);
-        self.internal_save_vesting(vesting_id, &vesting);
-        r
-    }
-
-    pub(crate) fn internal_save_vesting(&mut self, vesting_id: &VestingId, vesting: &Vesting) {
-        self.vestings.insert(&vesting_id, &vesting);
-    }
-}
 
 #[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
@@ -76,6 +42,119 @@ pub enum VestingCreateParam {
         time_cliff_list: Vec<CliffVestingCheckpoint>,
         token_id: AccountId,
     },
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct VestingTokenInfo {
+    pub token_id: AccountId,
+    #[serde(default)]
+    #[serde(with = "u128_dec_format")]
+    pub claimed_token_amount: Balance,
+    #[serde(default)]
+    #[serde(with = "u128_dec_format")]
+    pub total_vesting_amount: Balance,
+}
+
+impl<T: NaturalTime + VestingTokenInfoTrait> VestingAmount for T {
+    fn get_unreleased_amount(&self) -> Balance {
+        let period = self.get_period();
+        let mut remain_time = if self.get_end_time() <= get_block_second_time() {
+            0
+        } else {
+            self.get_end_time() - get_block_second_time()
+        };
+        remain_time = min(remain_time, period);
+        let unreleased_amount = U256::from(self.get_vesting_token_info().total_vesting_amount)
+            * U256::from(remain_time)
+            / U256::from(period);
+        unreleased_amount.as_u128()
+    }
+}
+
+impl<T: VestingAmount + VestingTokenInfoTrait + Frozen> Claimable for T {
+    fn claim(&mut self, amount: Option<Balance>) -> Balance {
+        assert!(
+            !self.is_frozen(),
+            "Failed to claim because this vesting is frozen."
+        );
+        let claimable_amount = self.get_claimable_amount();
+        if amount.is_some() {
+            assert!(
+                amount.unwrap() <= claimable_amount,
+                "claimable amount is less than claim amount."
+            );
+        }
+
+        self.set_claimed_token_amount(
+            self.get_vesting_token_info().claimed_token_amount + amount.unwrap_or(claimable_amount),
+        );
+        claimable_amount
+    }
+}
+
+impl Frozen for Vesting {
+    fn freeze(&mut self) {
+        match self {
+            Vesting::NaturalTimeLinearVesting(linear) => linear.freeze(),
+            Vesting::TimeCliffVesting(cliff) => cliff.freeze(),
+        }
+    }
+
+    fn unfreeze(&mut self) {
+        match self {
+            Vesting::NaturalTimeLinearVesting(linear) => linear.unfreeze(),
+            Vesting::TimeCliffVesting(cliff) => cliff.unfreeze(),
+        }
+    }
+
+    fn is_frozen(&self) -> bool {
+        match self {
+            Vesting::NaturalTimeLinearVesting(linear) => linear.is_frozen,
+            Vesting::TimeCliffVesting(cliff) => cliff.is_frozen,
+        }
+    }
+}
+
+impl VestingTokenInfoTrait for Vesting {
+    fn get_vesting_token_info(&self) -> &VestingTokenInfo {
+        match self {
+            Vesting::NaturalTimeLinearVesting(linear) => linear.get_vesting_token_info(),
+            Vesting::TimeCliffVesting(cliff) => cliff.get_vesting_token_info(),
+        }
+    }
+
+    fn set_claimed_token_amount(&mut self, amount: Balance) {
+        match self {
+            Vesting::NaturalTimeLinearVesting(linear) => linear.set_claimed_token_amount(amount),
+            Vesting::TimeCliffVesting(cliff) => cliff.set_claimed_token_amount(amount),
+        }
+    }
+}
+
+impl Beneficiary for Vesting {
+    fn get_beneficiary(&self) -> AccountId {
+        match self {
+            Vesting::NaturalTimeLinearVesting(linear) => linear.get_beneficiary(),
+            Vesting::TimeCliffVesting(cliff) => cliff.get_beneficiary(),
+        }
+    }
+
+    fn set_beneficiary(&mut self, account: AccountId) {
+        match self {
+            Vesting::NaturalTimeLinearVesting(linear) => linear.set_beneficiary(account),
+            Vesting::TimeCliffVesting(cliff) => cliff.set_beneficiary(account),
+        }
+    }
+}
+
+impl Claimable for Vesting {
+    fn claim(&mut self, amount: Option<Balance>) -> Balance {
+        match self {
+            Vesting::NaturalTimeLinearVesting(linear) => linear.claim(amount),
+            Vesting::TimeCliffVesting(cliff) => cliff.claim(amount),
+        }
+    }
 }
 
 impl Vesting {
@@ -132,47 +211,47 @@ impl Vesting {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct VestingTokenInfo {
-    pub token_id: AccountId,
-    pub claimed_token_amount: Balance,
-    pub total_vesting_amount: Balance,
-}
-
-impl<T: NaturalTime + VestingTokenInfoTrait> VestingAmount for T {
-    fn get_unreleased_amount(&self) -> Balance {
-        let period = self.get_period();
-        let mut remain_time = if self.get_end_time() <= get_block_second_time() {
-            0
-        } else {
-            self.get_end_time() - get_block_second_time()
-        };
-        remain_time = min(remain_time, period);
-        let unreleased_amount = U256::from(self.get_vesting_token_info().total_vesting_amount)
-            * U256::from(remain_time)
-            / U256::from(period);
-        unreleased_amount.as_u128()
-    }
-}
-
-impl<T: VestingAmount + VestingTokenInfoTrait + Frozen> Claimable for T {
-    fn claim(&mut self, amount: Option<Balance>) -> Balance {
-        assert!(
-            !self.is_frozen(),
-            "Failed to claim because this vesting is frozen."
-        );
-        let claimable_amount = self.get_claimable_amount();
-        if amount.is_some() {
-            assert!(
-                amount.unwrap() <= claimable_amount,
-                "claimable amount is less than claim amount."
-            );
+impl TokenVestingContract {
+    pub(crate) fn internal_create_vesting(&mut self, param: VestingCreateParam) -> VestingId {
+        self.assert_owner();
+        let id = self.internal_assign_pool_id();
+        let prev_storage = env::storage_usage();
+        self.vestings.insert(&id, &Vesting::new(id.clone(), param));
+        self.internal_check_storage(prev_storage);
+        VestingEvent::CreateVesting {
+            vesting: &self.internal_get_vesting(&id).unwrap(),
         }
+        .emit();
+        UserAction::CreateVesting { vesting_id: &id }.emit();
+        id
+    }
 
-        self.set_claimed_token_amount(
-            self.get_vesting_token_info().claimed_token_amount + amount.unwrap_or(claimable_amount),
-        );
-        claimable_amount
+    pub(crate) fn internal_assign_pool_id(&mut self) -> VestingId {
+        self.vesting_id += 1;
+        return U64(self.vesting_id);
+    }
+
+    pub(crate) fn internal_remove_vesting(&mut self, vesting_id: &VestingId) {
+        self.vestings.remove(&vesting_id);
+    }
+
+    pub(crate) fn internal_get_vesting(&self, vesting_id: &VestingId) -> Option<Vesting> {
+        self.vestings.get(vesting_id)
+    }
+
+    pub(crate) fn internal_use_vesting<F, R>(&mut self, vesting_id: &VestingId, mut f: F) -> R
+    where
+        F: FnMut(&mut Vesting) -> R,
+    {
+        let mut vesting = self
+            .internal_get_vesting(&vesting_id)
+            .expect("No such vesting");
+        let r = f(&mut vesting);
+        self.internal_save_vesting(vesting_id, &vesting);
+        r
+    }
+
+    pub(crate) fn internal_save_vesting(&mut self, vesting_id: &VestingId, vesting: &Vesting) {
+        self.vestings.insert(&vesting_id, &vesting);
     }
 }

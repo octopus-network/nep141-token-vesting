@@ -2,7 +2,6 @@ use crate::types::SecondTimeStamp;
 use crate::utils::get_block_second_time;
 use crate::vesting::VestingTokenInfo;
 use near_sdk::{AccountId, Balance};
-use std::cmp::{max, min};
 
 pub trait Frozen {
     fn freeze(&mut self);
@@ -47,4 +46,12 @@ pub trait VestingAmount: VestingTokenInfoTrait {
 
 pub trait Claimable {
     fn claim(&mut self, amount: Option<Balance>) -> Balance;
+}
+
+pub trait Finish: VestingTokenInfoTrait {
+    fn is_release_finish(&self) -> bool;
+    fn is_vesting_finish(&self) -> bool {
+        self.get_vesting_token_info().total_vesting_amount
+            == self.get_vesting_token_info().claimed_token_amount
+    }
 }

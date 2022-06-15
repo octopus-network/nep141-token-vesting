@@ -1,7 +1,7 @@
 use super::*;
 use crate::types::SecondTimeStamp;
 use crate::utils::get_block_second_time;
-use crate::vesting::traits::{Beneficiary, VestingAmount, VestingTokenInfoTrait};
+use crate::vesting::traits::{Beneficiary, Finish, VestingAmount, VestingTokenInfoTrait};
 use crate::vesting::VestingTokenInfo;
 use near_sdk::{AccountId, Balance};
 
@@ -24,6 +24,18 @@ pub struct CliffVestingCheckpoint {
     #[serde(default)]
     #[serde(with = "u128_dec_format")]
     pub amount: Balance,
+}
+
+impl Finish for TimeCliffVesting {
+    fn is_release_finish(&self) -> bool {
+        let max_time = self
+            .time_cliff_list
+            .iter()
+            .map(|e| e.time)
+            .max()
+            .unwrap_or(0);
+        return max_time < get_block_second_time();
+    }
 }
 
 impl Frozen for TimeCliffVesting {
@@ -97,6 +109,7 @@ mod tests {
         testing_env!(context.block_timestamp(2 * 1000_000_000).build());
 
         let mut vesting = TimeCliffVesting {
+            id: 1,
             beneficiary: bob(),
             time_cliff_list: vec![
                 CliffVestingCheckpoint { time: 1, amount: 1 },

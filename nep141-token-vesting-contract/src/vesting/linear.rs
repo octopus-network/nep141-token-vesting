@@ -1,7 +1,7 @@
 use super::*;
 use crate::types::SecondTimeStamp;
 use crate::vesting::traits::{
-    Beneficiary, Claimable, NaturalTime, VestingAmount, VestingTokenInfoTrait,
+    Beneficiary, Claimable, Finish, NaturalTime, VestingAmount, VestingTokenInfoTrait,
 };
 use near_sdk::{AccountId, Balance};
 
@@ -10,7 +10,11 @@ use near_sdk::{AccountId, Balance};
 pub struct NaturalTimeLinearVesting {
     pub id: VestingId,
     pub beneficiary: AccountId,
+    #[serde(default)]
+    #[serde(with = "u64_dec_format")]
     pub start_time: SecondTimeStamp,
+    #[serde(default)]
+    #[serde(with = "u64_dec_format")]
     pub end_time: SecondTimeStamp,
     pub vesting_token_info: VestingTokenInfo,
     pub is_frozen: bool,
@@ -18,6 +22,12 @@ pub struct NaturalTimeLinearVesting {
 }
 
 impl NaturalTimeLinearVesting {}
+
+impl Finish for NaturalTimeLinearVesting {
+    fn is_release_finish(&self) -> bool {
+        self.end_time < get_block_second_time()
+    }
+}
 
 impl Frozen for NaturalTimeLinearVesting {
     fn freeze(&mut self) {
@@ -84,6 +94,7 @@ mod tests {
         testing_env!(context.block_timestamp(1654595929 * 1000_000_000).build());
 
         let mut vesting = NaturalTimeLinearVesting {
+            id: 0,
             beneficiary: bob(),
             start_time: 1654585929,
             // 1654595929
