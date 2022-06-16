@@ -26,8 +26,8 @@ Contents:
 ### Create a vesting
 
 The `owner` can create a vesting. And the vesting has two different types: cliff vesting and linear vesting.
-- `cliff vesting`: When the `owner` creating a `cliff vesting`, it'll be allowed to add a series of point which contains time and amount. Then the vesting will calculate the claimable tokens by these points.
-- `linear vesting`: When the `owner` creating a `linear vesting`, it'll be allowed to set start time and end time. Then the vesting will calculate the claimable tokens by start time and end time.
+- `cliff vesting`: When the `owner` create a `cliff vesting`, it'll be allowed to add a series of point which contains time and amount. Then the vesting will calculate the claimable tokens by these points.
+- `linear vesting`: When the `owner` create a `linear vesting`, it'll be allowed to set start time and end time. Then the vesting will calculate the claimable tokens by start time and end time.
 
 ### Freeze a vesting
 
