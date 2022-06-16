@@ -6,50 +6,45 @@ Contents:
 
 - [Terminology](#terminology)
 - [Function specification](#function-specification)
-    - [Whitelist management](#Whitelist-management)
-    - [Create a conversion pool](#Create-a-conversion-pool)
-    - [Delete a conversion pool](#Delete-a-conversion-pool)
-    - [Transfer token to contract](#Transfer-token-to-contract)
-    - [Withdraw token from pool](#Withdraw-token-from-pool)
-    - [Pause and resume contract](#Pause-and-resume-contract)
-    - [View functions](#View-functions)
-- [Auditing](#Auditing)
+  - [Create a vesting](#Create-a-vesting)
+  - [Freeze a vesting](#Freeze-a-vesting)
+  - [Terminate a vesting](#Terminate-a-vesting)
+  - [Claim tokens](#Claim-tokens)
+  - [Change beneficiary](#Change-beneficiary)
+  - [View functions](#View-functions)
 
 ## Terminology
 
 - `nep141`: [A standard interface for fungible tokens in near network.](https://nomicon.io/Standards/FungibleToken/Core)
-- `cliff vesting`: A cliff vesting contains series of time point and token amount, which means how much token will be released at the time point.
-- `time linear vesting`: A time linear vesting contains a start time and end time, which means the vesting should be linear released by start time and end time.
+- `cliff vesting`: A cliff vesting contains a series of time points and token amount, which means how many tokens will be released at the time point.
+- `time linear vesting`: A time linear vesting contains a start time and end time, which means the vesting should be linearly released between start time and end time.
 - `beneficiary`: People who can claim tokens from a vesting.
-- `claim`: Beneficiary can claim rewards from a vesting.
-- `freeze a vesting`: Beneficiary is not allowed to claim the tokens when vesting is frozen.
-- `terminate a vesting`: Delete a vesting and the unclaimed tokens will be canceled.
-- `owner`: People who can creating, freeze and terminate a vesting.
+- `owner`: People who can create, freeze and terminate a vesting.
 
 ## Function specification
 
 ### Create a vesting
 
 The `owner` can create a vesting. And the vesting has two different types: cliff vesting and linear vesting.
-- `cliff vesting`: When `owner` creating a `cliff vesting`, it'll be allowed to add a series of point which contains time and amount. Then the vesting will calculate claimable token by these points.
-- `linear vesting`: When `owner` creating a `linear`, it'll be allowed to appoint start time and end time. Then the vesting will calculate claimable token by start time and end time.
+- `cliff vesting`: When the `owner` creating a `cliff vesting`, it'll be allowed to add a series of point which contains time and amount. Then the vesting will calculate the claimable tokens by these points.
+- `linear vesting`: When the `owner` creating a `linear vesting`, it'll be allowed to set start time and end time. Then the vesting will calculate the claimable tokens by start time and end time.
 
 ### Freeze a vesting
 
-- The `owner` can freeze a vesting, then the beneficiary will not allowed to claim the tokens when vesting is frozen.
+- The `owner` can freeze a vesting, then the beneficiary will not be allowed to claim the tokens when the vesting is frozen.
 
 ### Terminate a vesting
 
-- The `owner` can terminate a vesting, then the vesting will be deleted and the unclaimed tokens will belong to `owner`.
+- The `owner` can terminate a vesting, then the vesting will be deleted and the unclaimed tokens will belong to the `owner`.
 
-### Claim rewards from a vesting
+### Claim tokens
 
-- The `beneficiary` can claim rewards from a vesting. The vesting will calculate claimable token then send tokens to beneficiary's account.
+- The `beneficiary` can claim tokens from a vesting. The vesting will calculate the claimable token and then send tokens to the beneficiary's account.
 
 
 ### Change beneficiary
 
-- The `beneficiary` and the `owner` can change a new `beneficiary` in a vesting. Then the next time claimed rewards will send to new `beneficiary`.
+- The `beneficiary` and the `owner` can set a new `beneficiary` in a vesting. Then the next time claimed tokens will send to the new `beneficiary`.
 
 
 ### View functions
