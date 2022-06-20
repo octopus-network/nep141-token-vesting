@@ -1,12 +1,17 @@
-use crate::types::SecondTimeStamp;
 use crate::vesting::cliff::CliffVestingCheckpoint;
-use crate::vesting::VestingCreateParam;
 use crate::{Vesting, VestingId};
 use near_sdk::json_types::{U128, U64};
-use near_sdk::{AccountId, Balance, Promise};
+use near_sdk::{AccountId, Promise};
 
 pub trait Viewer {
-    fn get_vesting(&self, from_index: u32, limit: u32) -> Vec<Vesting>;
+    fn get_vesting(
+        &self,
+        from_index: u32,
+        limit: u32,
+        beneficiary: Option<AccountId>,
+    ) -> Vec<Vesting>;
+
+    fn get_claimable_amount(&self, vesting_id: VestingId) -> U128;
 }
 
 pub trait OwnerAction {

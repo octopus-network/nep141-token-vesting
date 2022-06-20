@@ -3,11 +3,11 @@ use crate::types::VestingId;
 use crate::vesting::Vesting;
 use itertools::Itertools;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LookupMap, UnorderedMap};
+use near_sdk::collections::UnorderedMap;
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
-    env, log, near_bindgen, AccountId, Balance, BorshStorageKey, Gas, PanicOnDefault, Promise,
+    env, log, near_bindgen, AccountId, Balance, BorshStorageKey, PanicOnDefault, Promise,
     StorageUsage,
 };
 
@@ -15,6 +15,7 @@ mod beneficiary;
 mod constants;
 mod contract_viewers;
 mod domain;
+pub mod events;
 mod fungible_token;
 mod interfaces;
 mod owner;
@@ -35,7 +36,7 @@ pub struct TokenVestingContract {
     pub owner: AccountId,
     // pub account: LookupMap<AccountId, VAccount>,
     pub vestings: UnorderedMap<VestingId, Vesting>,
-    pub vesting_id: VestingId,
+    pub vesting_id: u64,
 }
 
 #[near_bindgen]
@@ -58,9 +59,10 @@ impl TokenVestingContract {
             .unwrap_or_default() as Balance
             * env::storage_byte_cost();
 
+        log!("storage cost {}", storage_cost);
         let refund = env::attached_deposit().checked_sub(storage_cost).expect(
             format!(
-                "ERR_STORAGE_DEPOSIT need {}, attatched {}",
+                "ERR_STORAGE_DEPOSIT need {}, attached {}",
                 storage_cost,
                 env::attached_deposit()
             )
