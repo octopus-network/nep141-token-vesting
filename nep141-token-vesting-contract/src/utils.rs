@@ -1,5 +1,4 @@
 use crate::types::SecondTimeStamp;
-use crate::*;
 use near_sdk::env;
 
 pub fn get_block_second_time() -> SecondTimeStamp {

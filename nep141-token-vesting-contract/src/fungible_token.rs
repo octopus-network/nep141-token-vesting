@@ -3,17 +3,12 @@ use crate::events::{EventEmit, UserAction, VestingEvent};
 use crate::vesting::traits::{Finish, VestingTokenInfoTrait};
 use crate::*;
 use near_contract_standards::fungible_token::core::ext_ft_core;
-use near_contract_standards::fungible_token::receiver::FungibleTokenReceiver;
-use near_sdk::json_types::{U128, U64};
+use near_sdk::json_types::U128;
 use near_sdk::{Gas, PromiseResult, ONE_YOCTO};
 use std::ops::Mul;
 
 #[near_bindgen]
 impl TokenVestingContract {
-    pub(crate) fn internal_send_near(&self, receiver_id: AccountId, amount: Balance) -> Promise {
-        Promise::new(receiver_id).transfer(amount)
-    }
-
     pub(crate) fn internal_send_tokens(
         &mut self,
         receiver_id: &AccountId,
@@ -52,7 +47,7 @@ impl TokenVestingContract {
             "Expect 1 promise result for sending token."
         );
         log!(
-            "ft_transfer_resolved, tokenKid: {}, sender_id: {}, amount: {}",
+            "ft_transfer_resolved, token_id: {}, sender_id: {}, amount: {}",
             token_id,
             sender_id,
             amount.0

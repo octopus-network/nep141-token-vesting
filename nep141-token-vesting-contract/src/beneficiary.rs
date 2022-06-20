@@ -2,7 +2,7 @@ use crate::events::{EventEmit, UserAction, VestingEvent};
 use crate::interfaces::BeneficiaryAction;
 use crate::vesting::traits::{Beneficiary, Claimable, VestingTokenInfoTrait};
 use crate::*;
-use crate::{TokenVestingContract, Vesting, VestingId};
+use crate::{TokenVestingContract, VestingId};
 
 #[near_bindgen]
 impl BeneficiaryAction for TokenVestingContract {

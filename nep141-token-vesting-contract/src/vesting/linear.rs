@@ -1,8 +1,6 @@
 use super::*;
 use crate::types::SecondTimeStamp;
-use crate::vesting::traits::{
-    Beneficiary, Claimable, Finish, NaturalTime, VestingAmount, VestingTokenInfoTrait,
-};
+use crate::vesting::traits::{Beneficiary, Finish, NaturalTime, VestingTokenInfoTrait};
 use near_sdk::{AccountId, Balance};
 
 #[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
@@ -60,8 +58,8 @@ impl VestingTokenInfoTrait for NaturalTimeLinearVesting {
 
     fn set_claimed_token_amount(&mut self, amount: Balance) {
         assert!(
-            amount < self.vesting_token_info.total_vesting_amount,
-            "Try to set claimed token with {} which greater than total amount: {} ",
+            amount <= self.vesting_token_info.total_vesting_amount,
+            "Failed to set claimed token with {}, should less or eq than total amount: {} ",
             amount,
             self.vesting_token_info.total_vesting_amount
         );
@@ -87,14 +85,14 @@ mod tests {
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::testing_env;
 
-    #[should_panic("claimable amount is less than claim amount.")]
+    #[should_panic]
     #[test]
     fn test_linear() {
         let mut context = VMContextBuilder::new();
         testing_env!(context.block_timestamp(1654595929 * 1000_000_000).build());
 
         let mut vesting = NaturalTimeLinearVesting {
-            id: 0,
+            id: U64(0),
             beneficiary: bob(),
             start_time: 1654585929,
             // 1654595929

@@ -1,11 +1,9 @@
 use crate::events::{EventEmit, UserAction, VestingEvent};
-use crate::interfaces::Viewer;
-use crate::types::SecondTimeStamp;
 use crate::vesting::cliff::CliffVestingCheckpoint;
 use crate::vesting::traits::Frozen;
 use crate::vesting::VestingCreateParam;
 use crate::*;
-use crate::{OwnerAction, TokenVestingContract, Vesting, VestingId};
+use crate::{OwnerAction, TokenVestingContract, VestingId};
 use near_contract_standards::upgrade::Ownable;
 use near_sdk::json_types::U64;
 

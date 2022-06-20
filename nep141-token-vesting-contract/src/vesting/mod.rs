@@ -1,6 +1,6 @@
 use near_contract_standards::upgrade::Ownable;
 use near_sdk::json_types::U64;
-use near_sdk::{AccountId, Balance, BorshStorageKey};
+use near_sdk::{AccountId, Balance};
 use std::cmp::min;
 
 use crate::events::{EventEmit, UserAction, VestingEvent};
@@ -11,7 +11,6 @@ use crate::vesting::linear::NaturalTimeLinearVesting;
 use crate::vesting::traits::{
     Beneficiary, Claimable, Frozen, NaturalTime, VestingAmount, VestingTokenInfoTrait,
 };
-use crate::vesting::VestingCreateParam::LinearVesting;
 use crate::*;
 
 pub mod cliff;

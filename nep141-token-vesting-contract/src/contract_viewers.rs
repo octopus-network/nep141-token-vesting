@@ -32,7 +32,7 @@ impl Viewer for TokenVestingContract {
     fn get_claimable_amount(&self, vesting_id: VestingId) -> U128 {
         match self
             .internal_get_vesting(&vesting_id)
-            .expect("no such vesting.")
+            .expect("No such vesting.")
         {
             Vesting::NaturalTimeLinearVesting(linear_vesting) => {
                 U128(linear_vesting.get_claimable_amount())

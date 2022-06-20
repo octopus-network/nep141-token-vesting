@@ -69,8 +69,8 @@ impl VestingTokenInfoTrait for TimeCliffVesting {
 
     fn set_claimed_token_amount(&mut self, amount: Balance) {
         assert!(
-            amount < self.vesting_token_info.total_vesting_amount,
-            "claimed token amount:{} should less than total vesting amount:{}",
+            amount <= self.vesting_token_info.total_vesting_amount,
+            "Failed to claim {} amount of token, should less or eq than total vesting amount:{}",
             amount,
             self.vesting_token_info.total_vesting_amount
         );
@@ -102,14 +102,14 @@ mod tests {
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::testing_env;
 
-    #[should_panic("claimable amount is less than claim amount.")]
+    #[should_panic]
     #[test]
     fn test_cliff_claim() {
         let mut context = VMContextBuilder::new();
         testing_env!(context.block_timestamp(2 * 1000_000_000).build());
 
         let mut vesting = TimeCliffVesting {
-            id: 1,
+            id: U64(1),
             beneficiary: bob(),
             time_cliff_list: vec![
                 CliffVestingCheckpoint { time: 1, amount: 1 },

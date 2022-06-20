@@ -1,5 +1,4 @@
 use crate::types::SecondTimeStamp;
-use crate::utils::get_block_second_time;
 use crate::vesting::VestingTokenInfo;
 use near_sdk::{AccountId, Balance};
 
