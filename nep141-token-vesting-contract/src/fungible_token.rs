@@ -1,10 +1,10 @@
 use crate::constants::{T_GAS_FOR_FT_TRANSFER, T_GAS_FOR_RESOLVE_TRANSFER};
-use crate::events::{EventEmit, VestingEvent};
+use crate::events::{EventEmit, UserAction, VestingEvent};
 use crate::vesting::traits::{Finish, VestingTokenInfoTrait};
 use crate::*;
 use near_contract_standards::fungible_token::core::ext_ft_core;
 use near_contract_standards::fungible_token::receiver::FungibleTokenReceiver;
-use near_sdk::json_types::U128;
+use near_sdk::json_types::{U128, U64};
 use near_sdk::{Gas, PromiseResult, ONE_YOCTO};
 use std::ops::Mul;
 
@@ -83,18 +83,23 @@ impl TokenVestingContract {
             PromiseResult::Failed => {
                 if vesting_id.is_some() {
                     let vesting_id = vesting_id.unwrap();
-                    self.internal_use_vesting(&vesting_id, |vesting| match vesting {
-                        Vesting::NaturalTimeLinearVesting(linear) => {
-                            linear.set_claimed_token_amount(
-                                linear.vesting_token_info.claimed_token_amount - amount.0,
-                            );
-                        }
-                        Vesting::TimeCliffVesting(cliff) => {
-                            cliff.set_claimed_token_amount(
-                                cliff.vesting_token_info.claimed_token_amount - amount.0,
-                            );
-                        }
-                    })
+                    self.internal_use_vesting(&vesting_id, |vesting| {
+                        vesting.set_claimed_token_amount(
+                            vesting.get_vesting_token_info().claimed_token_amount - amount.0,
+                        )
+                    });
+                    VestingEvent::UpdateVesting {
+                        vesting: &self.internal_get_vesting(&vesting_id).expect(
+                            format!("Failed to get vesting by {}.", &vesting_id.0).as_str(),
+                        ),
+                    }
+                    .emit();
+                    UserAction::Refund {
+                        vesting_id: &vesting_id,
+                        token_id: &token_id,
+                        amount: &amount,
+                    }
+                    .emit();
                 }
             }
         }

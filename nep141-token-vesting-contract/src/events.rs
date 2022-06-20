@@ -45,6 +45,11 @@ pub enum UserAction<'a> {
         token_id: &'a AccountId,
         amount: &'a U128,
     },
+    Refund {
+        vesting_id: &'a VestingId,
+        token_id: &'a AccountId,
+        amount: &'a U128,
+    },
 }
 
 pub trait EventEmit {
@@ -95,7 +100,7 @@ mod tests {
     fn test_vesting() {
         VestingEvent::CreateVesting {
             vesting: &(Vesting::TimeCliffVesting(TimeCliffVesting {
-                id: 1,
+                id: U64(1),
                 beneficiary: bob(),
                 time_cliff_list: vec![],
                 vesting_token_info: VestingTokenInfo {
