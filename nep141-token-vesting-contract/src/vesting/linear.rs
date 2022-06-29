@@ -98,7 +98,6 @@ mod tests {
             // 1654595929
             end_time: 1654686929,
             vesting_token_info: VestingTokenInfo {
-                token_id: usdc(),
                 claimed_token_amount: 0,
                 total_vesting_amount: 100,
             },

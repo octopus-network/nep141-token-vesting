@@ -1,9 +1,13 @@
 use crate::interfaces::Viewer;
-use crate::vesting::traits::VestingAmount;
+use crate::vesting::traits::{Beneficiary, VestingAmount};
 use crate::*;
 
 #[near_bindgen]
 impl Viewer for TokenVestingContract {
+    fn get_vesting_token_id(&self) -> AccountId {
+        self.token_id.clone()
+    }
+
     fn get_vesting(
         &self,
         from_index: u32,
@@ -30,14 +34,23 @@ impl Viewer for TokenVestingContract {
     }
 
     fn get_claimable_amount(&self, vesting_id: VestingId) -> U128 {
-        match self
-            .internal_get_vesting(&vesting_id)
+        self.internal_get_vesting(&vesting_id)
             .expect("No such vesting.")
-        {
-            Vesting::NaturalTimeLinearVesting(linear_vesting) => {
-                U128(linear_vesting.get_claimable_amount())
-            }
-            Vesting::TimeCliffVesting(cliff_vesting) => U128(cliff_vesting.get_claimable_amount()),
-        }
+            .get_claimable_amount()
+            .into()
+    }
+
+    fn get_all_claimable_amount(&self, beneficiary: AccountId) -> U128 {
+        U128(
+            self.vestings
+                .values()
+                .filter(|e| e.get_beneficiary().eq(&beneficiary))
+                .map(|e| e.get_claimable_amount())
+                .sum(),
+        )
+    }
+
+    fn get_legacy(&self, account_id: AccountId) -> U128 {
+        self.legacy.get(&account_id).unwrap_or(0).into()
     }
 }

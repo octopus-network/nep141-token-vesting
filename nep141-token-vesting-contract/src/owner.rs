@@ -28,14 +28,12 @@ impl OwnerAction for TokenVestingContract {
         start_time: U64,
         end_time: U64,
         total_vesting_amount: U128,
-        token_id: AccountId,
     ) -> VestingId {
         self.internal_create_vesting(VestingCreateParam::LinearVesting {
             beneficiary,
             start_time: start_time.0,
             end_time: end_time.0,
             total_vesting_amount: total_vesting_amount.0,
-            token_id,
         })
     }
 
@@ -44,12 +42,10 @@ impl OwnerAction for TokenVestingContract {
         &mut self,
         beneficiary: AccountId,
         time_cliff_list: Vec<CliffVestingCheckpoint>,
-        token_id: AccountId,
     ) -> VestingId {
         self.internal_create_vesting(VestingCreateParam::CliffVesting {
             beneficiary,
             time_cliff_list,
-            token_id,
         })
     }
 

@@ -117,7 +117,6 @@ mod tests {
                 CliffVestingCheckpoint { time: 3, amount: 1 },
             ],
             vesting_token_info: VestingTokenInfo {
-                token_id: usdt(),
                 claimed_token_amount: 0,
                 total_vesting_amount: 3,
             },

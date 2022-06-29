@@ -9,7 +9,7 @@ use crate::utils::get_block_second_time;
 use crate::vesting::cliff::{CliffVestingCheckpoint, TimeCliffVesting};
 use crate::vesting::linear::NaturalTimeLinearVesting;
 use crate::vesting::traits::{
-    Beneficiary, Claimable, Frozen, NaturalTime, VestingAmount, VestingTokenInfoTrait,
+    Beneficiary, Claimable, Finish, Frozen, NaturalTime, VestingAmount, VestingTokenInfoTrait,
 };
 use crate::*;
 
@@ -34,19 +34,16 @@ pub enum VestingCreateParam {
         start_time: SecondTimeStamp,
         end_time: SecondTimeStamp,
         total_vesting_amount: Balance,
-        token_id: AccountId,
     },
     CliffVesting {
         beneficiary: AccountId,
         time_cliff_list: Vec<CliffVestingCheckpoint>,
-        token_id: AccountId,
     },
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct VestingTokenInfo {
-    pub token_id: AccountId,
     #[serde(default)]
     #[serde(with = "u128_dec_format")]
     pub claimed_token_amount: Balance,
@@ -147,16 +144,32 @@ impl Beneficiary for Vesting {
     }
 }
 
-impl Claimable for Vesting {
-    fn claim(&mut self, amount: Option<Balance>) -> Balance {
+impl VestingAmount for Vesting {
+    fn get_unreleased_amount(&self) -> Balance {
         match self {
-            Vesting::NaturalTimeLinearVesting(linear) => linear.claim(amount),
-            Vesting::TimeCliffVesting(cliff) => cliff.claim(amount),
+            Vesting::NaturalTimeLinearVesting(linear) => linear.get_unreleased_amount(),
+            Vesting::TimeCliffVesting(cliff) => cliff.get_unreleased_amount(),
+        }
+    }
+}
+
+impl Finish for Vesting {
+    fn is_release_finish(&self) -> bool {
+        match self {
+            Vesting::NaturalTimeLinearVesting(linear) => linear.is_release_finish(),
+            Vesting::TimeCliffVesting(cliff) => cliff.is_release_finish(),
         }
     }
 }
 
 impl Vesting {
+    pub fn get_vesting_id(&self) -> VestingId {
+        match self {
+            Vesting::NaturalTimeLinearVesting(linear) => linear.id,
+            Vesting::TimeCliffVesting(cliff) => cliff.id,
+        }
+    }
+
     pub fn new(id: VestingId, param: VestingCreateParam) -> Self {
         match param {
             VestingCreateParam::LinearVesting {
@@ -164,7 +177,6 @@ impl Vesting {
                 start_time,
                 end_time,
                 total_vesting_amount,
-                token_id,
             } => {
                 assert!(start_time<end_time, "End time should be less than start time when creating NaturalTimeLinearVesting.");
 
@@ -174,7 +186,6 @@ impl Vesting {
                     start_time,
                     end_time,
                     vesting_token_info: VestingTokenInfo {
-                        token_id,
                         claimed_token_amount: 0,
                         total_vesting_amount,
                     },
@@ -184,7 +195,6 @@ impl Vesting {
             VestingCreateParam::CliffVesting {
                 beneficiary,
                 time_cliff_list,
-                token_id,
             } => {
                 let total_amount = time_cliff_list
                     .iter()
@@ -199,7 +209,6 @@ impl Vesting {
                     beneficiary,
                     time_cliff_list,
                     vesting_token_info: VestingTokenInfo {
-                        token_id,
                         claimed_token_amount: 0,
                         total_vesting_amount: total_amount,
                     },
@@ -211,10 +220,21 @@ impl Vesting {
 }
 
 impl TokenVestingContract {
+
     pub(crate) fn internal_create_vesting(&mut self, param: VestingCreateParam) -> VestingId {
         self.assert_owner();
         let id = self.internal_assign_pool_id();
         let prev_storage = env::storage_usage();
+
+        match &param {
+            VestingCreateParam::LinearVesting { beneficiary, .. } => {
+                self.internal_register_legacy(beneficiary);
+            }
+            VestingCreateParam::CliffVesting { beneficiary, .. } => {
+                self.internal_register_legacy(beneficiary);
+            }
+        };
+
         self.vestings.insert(&id, &Vesting::new(id.clone(), param));
         self.internal_check_storage(prev_storage);
         VestingEvent::CreateVesting {
@@ -246,11 +266,11 @@ impl TokenVestingContract {
             .internal_get_vesting(&vesting_id)
             .expect("No such vesting");
         let r = f(&mut vesting);
-        self.internal_save_vesting(vesting_id, &vesting);
+        self.internal_save_vesting(&vesting);
         r
     }
 
-    pub(crate) fn internal_save_vesting(&mut self, vesting_id: &VestingId, vesting: &Vesting) {
-        self.vestings.insert(&vesting_id, &vesting);
+    pub(crate) fn internal_save_vesting(&mut self, vesting: &Vesting) {
+        self.vestings.insert(&vesting.get_vesting_id(), &vesting);
     }
 }

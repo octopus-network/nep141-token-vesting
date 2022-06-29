@@ -3,7 +3,7 @@ use crate::types::VestingId;
 use crate::vesting::Vesting;
 use itertools::Itertools;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::UnorderedMap;
+use near_sdk::collections::{LookupMap, UnorderedMap};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -28,13 +28,15 @@ use crate::utils::*;
 #[derive(BorshStorageKey, BorshSerialize)]
 pub(crate) enum StorageKey {
     Vestings,
+    Legacy,
 }
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct TokenVestingContract {
     pub owner: AccountId,
-    // pub account: LookupMap<AccountId, VAccount>,
+    pub token_id: AccountId,
+    pub legacy: LookupMap<AccountId, Balance>,
     pub vestings: UnorderedMap<VestingId, Vesting>,
     pub vesting_id: u64,
 }
@@ -42,9 +44,11 @@ pub struct TokenVestingContract {
 #[near_bindgen]
 impl TokenVestingContract {
     #[init]
-    pub fn new(owner: AccountId) -> Self {
+    pub fn new(owner: AccountId, token_id: AccountId) -> Self {
         Self {
             owner,
+            token_id,
+            legacy: LookupMap::new(StorageKey::Legacy),
             vestings: UnorderedMap::new(StorageKey::Vestings),
             vesting_id: 0,
         }
@@ -71,6 +75,22 @@ impl TokenVestingContract {
         if refund > 0 {
             Promise::new(env::predecessor_account_id()).transfer(refund);
         }
+    }
+
+    fn internal_register_legacy(&mut self, account_id: &AccountId) {
+        if !self.legacy.contains_key(account_id) {
+            self.legacy.insert(account_id, &0);
+        }
+    }
+
+    fn internal_add_legacy(&mut self, account_id: &AccountId, amount: Balance) {
+        let balance = self.legacy.get(&account_id).unwrap_or(0);
+        self.legacy.insert(
+            &account_id,
+            &balance
+                .checked_add(amount)
+                .expect("Failed to add legacy by u128 add overflow."),
+        );
     }
 }
 

@@ -45,8 +45,8 @@ pub enum UserAction<'a> {
         token_id: &'a AccountId,
         amount: &'a U128,
     },
-    Refund {
-        vesting_id: &'a VestingId,
+    Legacy {
+        beneficiary: &'a AccountId,
         token_id: &'a AccountId,
         amount: &'a U128,
     },
@@ -104,7 +104,6 @@ mod tests {
                 beneficiary: bob(),
                 time_cliff_list: vec![],
                 vesting_token_info: VestingTokenInfo {
-                    token_id: usdt(),
                     claimed_token_amount: 0,
                     total_vesting_amount: 0,
                 },
