@@ -12,9 +12,16 @@ pub const EVENT_STANDARD_VERSION: &str = "1.0.0";
 #[serde(tag = "vesting_event", content = "data")]
 #[serde(rename_all = "snake_case")]
 pub enum VestingEvent<'a> {
-    CreateVesting { vesting: &'a Vesting },
-    UpdateVesting { vesting: &'a Vesting },
-    TerminateVesting { vesting_id: &'a VestingId },
+    CreateVesting {
+        vesting: &'a Vesting,
+        token_id: &'a AccountId,
+    },
+    UpdateVesting {
+        vesting: &'a Vesting,
+    },
+    TerminateVesting {
+        vesting_id: &'a VestingId,
+    },
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -109,6 +116,7 @@ mod tests {
                 },
                 is_frozen: false,
             })),
+            token_id: &usdt(),
         }
         .emit();
     }

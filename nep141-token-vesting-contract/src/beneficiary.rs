@@ -43,7 +43,7 @@ impl BeneficiaryAction for TokenVestingContract {
         .emit();
     }
 
-    fn claim(&mut self, vesting_id: VestingId, amount: Option<U128>) -> Promise {
+    fn claim(&mut self, vesting_id: VestingId, amount: Option<U128>) {
         let mut vesting = self
             .internal_get_vesting(&vesting_id)
             .expect(format!("Failed to claim, no such vesting id: #{}", vesting_id.0).as_str());
@@ -75,10 +75,12 @@ impl BeneficiaryAction for TokenVestingContract {
             amount: &U128(claimable_amount),
         }
         .emit();
-        self.internal_send_tokens(&beneficiary, &self.token_id.clone(), claimable_amount)
+        self.internal_send_tokens(&beneficiary, &self.token_id.clone(), claimable_amount);
     }
 
-    fn claim_all(&mut self, beneficiary: AccountId) -> Promise {
+    fn claim_all(&mut self, beneficiary: Option<AccountId>) {
+        let beneficiary = beneficiary.unwrap_or(env::predecessor_account_id());
+
         let mut amount: u128 = 0;
         let vesting_token_id = self.token_id.clone();
         let vestings = self
@@ -115,7 +117,5 @@ impl BeneficiaryAction for TokenVestingContract {
         }
 
         self.internal_send_tokens(&beneficiary, &vesting_token_id, amount);
-
-        todo!()
     }
 }

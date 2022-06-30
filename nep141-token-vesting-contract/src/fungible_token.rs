@@ -13,7 +13,7 @@ impl TokenVestingContract {
         receiver_id: &AccountId,
         token_id: &AccountId,
         amount: Balance,
-    ) -> Promise {
+    ) {
         assert!(amount > 0, "Failed to send tokens because amount is 0.");
         ext_ft_core::ext(token_id.clone())
             .with_attached_deposit(ONE_YOCTO)
@@ -23,7 +23,7 @@ impl TokenVestingContract {
                 Self::ext(env::current_account_id())
                     .with_static_gas(Gas::ONE_TERA.mul(T_GAS_FOR_RESOLVE_TRANSFER))
                     .ft_transfer_resolved(token_id.clone(), receiver_id.clone(), U128(amount)),
-            )
+            );
     }
 
     #[private]

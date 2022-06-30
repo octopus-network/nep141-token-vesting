@@ -220,7 +220,6 @@ impl Vesting {
 }
 
 impl TokenVestingContract {
-
     pub(crate) fn internal_create_vesting(&mut self, param: VestingCreateParam) -> VestingId {
         self.assert_owner();
         let id = self.internal_assign_pool_id();
@@ -239,6 +238,7 @@ impl TokenVestingContract {
         self.internal_check_storage(prev_storage);
         VestingEvent::CreateVesting {
             vesting: &self.internal_get_vesting(&id).unwrap(),
+            token_id: &self.token_id.clone(),
         }
         .emit();
         UserAction::CreateVesting { vesting_id: &id }.emit();
