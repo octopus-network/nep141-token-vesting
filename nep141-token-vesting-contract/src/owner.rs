@@ -55,7 +55,7 @@ impl OwnerAction for TokenVestingContract {
         VestingEvent::UpdateVesting {
             vesting: &self
                 .internal_get_vesting(&vesting_id)
-                .expect(format!("Failed to get vesting by {}.", vesting_id.0).as_str()),
+                .expect(format!("Failed to get vesting by id: {}.", vesting_id.0).as_str()),
         }
         .emit();
         UserAction::FreezeVesting {
@@ -71,7 +71,7 @@ impl OwnerAction for TokenVestingContract {
         VestingEvent::UpdateVesting {
             vesting: &self
                 .internal_get_vesting(&vesting_id)
-                .expect(format!("Failed to get vesting by {}.", vesting_id.0).as_str()),
+                .expect(format!("Failed to get vesting by id: {}.", vesting_id.0).as_str()),
         }
         .emit();
         UserAction::UnfreezeVesting {

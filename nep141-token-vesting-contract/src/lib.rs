@@ -1,3 +1,4 @@
+use crate::events::{EventEmit, UserAction};
 use crate::interfaces::OwnerAction;
 use crate::types::VestingId;
 use crate::vesting::Vesting;
@@ -91,6 +92,13 @@ impl TokenVestingContract {
                 .checked_add(amount)
                 .expect("Failed to add legacy by u128 add overflow."),
         );
+
+        UserAction::Legacy {
+            account_id: &account_id,
+            token_id: &self.token_id,
+            amount: &U128(amount),
+        }
+        .emit();
     }
 }
 

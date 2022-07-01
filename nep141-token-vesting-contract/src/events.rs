@@ -1,3 +1,4 @@
+use crate::types::TransferId;
 use crate::{Vesting, VestingId};
 use near_sdk::json_types::U128;
 use near_sdk::serde::Serialize;
@@ -47,15 +48,42 @@ pub enum UserAction<'a> {
         new_beneficiary: &'a AccountId,
     },
     Claim {
+        transfer_id: &'a TransferId,
         vesting_id: &'a VestingId,
         beneficiary: &'a AccountId,
         token_id: &'a AccountId,
         amount: &'a U128,
     },
-    Legacy {
+    ClaimAll {
+        transfer_id: &'a TransferId,
+        vesting_ids: &'a Vec<VestingId>,
         beneficiary: &'a AccountId,
         token_id: &'a AccountId,
         amount: &'a U128,
+    },
+
+    Legacy {
+        account_id: &'a AccountId,
+        token_id: &'a AccountId,
+        amount: &'a U128,
+    },
+    WithdrawLegacy {
+        account_id: &'a AccountId,
+        token_id: &'a AccountId,
+        amount: &'a U128,
+        transfer_id: &'a TransferId,
+    },
+}
+
+#[derive(Serialize, Debug, Clone)]
+#[serde(crate = "near_sdk::serde")]
+#[serde(tag = "action_status", content = "data")]
+#[serde(rename_all = "snake_case")]
+pub enum ActionStatus<'a> {
+    // todo change to ft_transfer result
+    FtTransferResult {
+        transfer_id: &'a TransferId,
+        is_success: &'a bool,
     },
 }
 
@@ -70,6 +98,7 @@ pub trait EventEmit {
 
 impl EventEmit for VestingEvent<'_> {}
 impl EventEmit for UserAction<'_> {}
+impl EventEmit for ActionStatus<'_> {}
 
 // Emit event that follows NEP-297 standard: https://nomicon.io/Standards/EventsFormat
 // Arguments

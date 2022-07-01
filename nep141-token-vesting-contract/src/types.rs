@@ -8,3 +8,4 @@ construct_uint! {
 
 pub type SecondTimeStamp = u64;
 pub type VestingId = U64;
+pub type TransferId = U64;

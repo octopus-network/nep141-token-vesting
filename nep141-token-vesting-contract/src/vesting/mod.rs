@@ -222,7 +222,7 @@ impl Vesting {
 impl TokenVestingContract {
     pub(crate) fn internal_create_vesting(&mut self, param: VestingCreateParam) -> VestingId {
         self.assert_owner();
-        let id = self.internal_assign_pool_id();
+        let id = self.internal_assign_id();
         let prev_storage = env::storage_usage();
 
         match &param {
@@ -245,7 +245,7 @@ impl TokenVestingContract {
         id
     }
 
-    pub(crate) fn internal_assign_pool_id(&mut self) -> VestingId {
+    pub(crate) fn internal_assign_id(&mut self) -> VestingId {
         self.vesting_id += 1;
         return U64(self.vesting_id);
     }
