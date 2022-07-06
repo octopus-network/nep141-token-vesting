@@ -1,13 +1,14 @@
 use super::*;
 use crate::types::SecondTimeStamp;
 use crate::utils::get_block_second_time;
-use crate::vesting::traits::{Beneficiary, VestingAmount, VestingTokenInfoTrait};
+use crate::vesting::traits::{Beneficiary, Finish, VestingAmount, VestingTokenInfoTrait};
 use crate::vesting::VestingTokenInfo;
 use near_sdk::{AccountId, Balance};
 
 #[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct TimeCliffVesting {
+    pub id: VestingId,
     pub beneficiary: AccountId,
     pub time_cliff_list: Vec<CliffVestingCheckpoint>,
     pub vesting_token_info: VestingTokenInfo,
@@ -17,10 +18,24 @@ pub struct TimeCliffVesting {
 #[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CliffVestingCheckpoint {
+    #[serde(default)]
+    #[serde(with = "u64_dec_format")]
     pub time: SecondTimeStamp,
     #[serde(default)]
     #[serde(with = "u128_dec_format")]
     pub amount: Balance,
+}
+
+impl Finish for TimeCliffVesting {
+    fn is_release_finish(&self) -> bool {
+        let max_time = self
+            .time_cliff_list
+            .iter()
+            .map(|e| e.time)
+            .max()
+            .unwrap_or(0);
+        return max_time < get_block_second_time();
+    }
 }
 
 impl Frozen for TimeCliffVesting {
@@ -54,8 +69,8 @@ impl VestingTokenInfoTrait for TimeCliffVesting {
 
     fn set_claimed_token_amount(&mut self, amount: Balance) {
         assert!(
-            amount < self.vesting_token_info.total_vesting_amount,
-            "claimed token amount:{} should less than total vesting amount:{}",
+            amount <= self.vesting_token_info.total_vesting_amount,
+            "Failed to claim {} amount of token, should less or eq than total vesting amount:{}",
             amount,
             self.vesting_token_info.total_vesting_amount
         );
@@ -84,36 +99,33 @@ mod tests {
     use crate::test::{usdc, usdt};
     use crate::vesting::traits::Claimable;
     use near_sdk::test_utils::test_env::bob;
+    use near_sdk::test_utils::VMContextBuilder;
+    use near_sdk::testing_env;
 
+    #[should_panic]
     #[test]
     fn test_cliff_claim() {
-        let mut cliff = TimeCliffVesting {
-            beneficiary: bob(),
-            time_cliff_list: vec![],
-            vesting_token_info: VestingTokenInfo {
-                token_id: usdt(),
-                claimed_token_amount: 0,
-                total_vesting_amount: 12345,
-            },
-            is_frozen: false,
-        };
-        cliff.claim(Some(345));
-        assert_eq!(cliff.get_claimable_amount(), 12000);
-    }
+        let mut context = VMContextBuilder::new();
+        testing_env!(context.block_timestamp(2 * 1000_000_000).build());
 
-    #[test]
-    #[should_panic]
-    fn test_claim_error() {
-        let mut cliff = TimeCliffVesting {
+        let mut vesting = TimeCliffVesting {
+            id: U64(1),
             beneficiary: bob(),
-            time_cliff_list: vec![],
+            time_cliff_list: vec![
+                CliffVestingCheckpoint { time: 1, amount: 1 },
+                CliffVestingCheckpoint { time: 2, amount: 1 },
+                CliffVestingCheckpoint { time: 3, amount: 1 },
+            ],
             vesting_token_info: VestingTokenInfo {
-                token_id: usdt(),
                 claimed_token_amount: 0,
-                total_vesting_amount: 12345,
+                total_vesting_amount: 3,
             },
             is_frozen: false,
         };
-        cliff.claim(Some(123456));
+        assert_eq!(vesting.get_claimable_amount(), 2);
+        vesting.claim(Some(2));
+        assert_eq!(vesting.get_claimable_amount(), 0);
+        vesting.claim(Option::None);
+        vesting.claim(Some(1));
     }
 }
