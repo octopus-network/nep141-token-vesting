@@ -1,7 +1,7 @@
 use crate::vesting::cliff::CliffVestingCheckpoint;
 use crate::{Vesting, VestingId};
 use near_sdk::json_types::{U128, U64};
-use near_sdk::{AccountId, Balance};
+use near_sdk::{AccountId, Balance, PromiseOrValue};
 
 pub trait Viewer {
     fn get_vesting_token_id(&self) -> AccountId;
@@ -16,8 +16,6 @@ pub trait Viewer {
     fn get_claimable_amount(&self, vesting_id: VestingId) -> U128;
 
     fn get_all_claimable_amount(&self, beneficiary: AccountId) -> U128;
-
-    fn get_legacy(&self, account_id: Option<AccountId>) -> U128;
 }
 
 pub trait OwnerAction {
@@ -45,9 +43,7 @@ pub trait OwnerAction {
 pub trait BeneficiaryAction {
     fn change_beneficiary(&mut self, vesting_id: VestingId, new_beneficiary: AccountId);
 
-    fn claim(&mut self, vesting_id: VestingId, amount: Option<U128>) -> Balance;
+    fn claim(&mut self, vesting_id: VestingId, amount: Option<U128>) -> PromiseOrValue<U128>;
 
-    fn claim_all(&mut self, beneficiary: Option<AccountId>) -> Balance;
-
-    fn withdraw_legacy(&mut self, account_id: Option<AccountId>);
+    fn claim_all(&mut self, beneficiary: Option<AccountId>) -> PromiseOrValue<U128>;
 }

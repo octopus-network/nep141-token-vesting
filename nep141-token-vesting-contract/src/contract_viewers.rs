@@ -49,11 +49,4 @@ impl Viewer for TokenVestingContract {
                 .sum(),
         )
     }
-
-    fn get_legacy(&self, account_id: Option<AccountId>) -> U128 {
-        self.legacy
-            .get(&(account_id.unwrap_or(env::predecessor_account_id())))
-            .unwrap_or(0)
-            .into()
-    }
 }

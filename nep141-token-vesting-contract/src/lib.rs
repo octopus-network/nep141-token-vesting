@@ -15,8 +15,8 @@ use near_sdk::{
 mod beneficiary;
 mod constants;
 mod contract_viewers;
-mod domain;
 pub mod events;
+mod external;
 mod fungible_token;
 mod interfaces;
 mod owner;
@@ -35,11 +35,11 @@ pub(crate) enum StorageKey {
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct TokenVestingContract {
+    // contract owner
     pub owner: AccountId,
     pub token_id: AccountId,
-    pub legacy: LookupMap<AccountId, Balance>,
     pub vestings: UnorderedMap<VestingId, Vesting>,
-    pub vesting_id: u64,
+    pub uuid: u64,
 }
 
 #[near_bindgen]
@@ -49,9 +49,8 @@ impl TokenVestingContract {
         Self {
             owner,
             token_id,
-            legacy: LookupMap::new(StorageKey::Legacy),
             vestings: UnorderedMap::new(StorageKey::Vestings),
-            vesting_id: 0,
+            uuid: 0,
         }
     }
 }
@@ -76,29 +75,6 @@ impl TokenVestingContract {
         if refund > 0 {
             Promise::new(env::predecessor_account_id()).transfer(refund);
         }
-    }
-
-    fn internal_register_legacy(&mut self, account_id: &AccountId) {
-        if !self.legacy.contains_key(account_id) {
-            self.legacy.insert(account_id, &0);
-        }
-    }
-
-    fn internal_add_legacy(&mut self, account_id: &AccountId, amount: Balance) {
-        let balance = self.legacy.get(&account_id).unwrap_or(0);
-        self.legacy.insert(
-            &account_id,
-            &balance
-                .checked_add(amount)
-                .expect("Failed to add legacy by u128 add overflow."),
-        );
-
-        UserAction::Legacy {
-            account_id: &account_id,
-            token_id: &self.token_id,
-            amount: &U128(amount),
-        }
-        .emit();
     }
 }
 

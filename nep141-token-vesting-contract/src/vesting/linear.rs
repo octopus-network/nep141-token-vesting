@@ -16,7 +16,6 @@ pub struct NaturalTimeLinearVesting {
     pub end_time: SecondTimeStamp,
     pub vesting_token_info: VestingTokenInfo,
     pub is_frozen: bool,
-    // operate_config: VestingOperateConfig
 }
 
 impl NaturalTimeLinearVesting {}

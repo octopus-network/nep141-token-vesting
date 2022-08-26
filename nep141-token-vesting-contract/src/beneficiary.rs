@@ -1,8 +1,13 @@
 use crate::events::{EventEmit, UserAction, VestingEvent};
-use crate::interfaces::BeneficiaryAction;
+use crate::external::*;
+use crate::interfaces::{BeneficiaryAction, Viewer};
 use crate::vesting::traits::{Beneficiary, Claimable, Finish};
 use crate::*;
 use crate::{TokenVestingContract, VestingId};
+use near_contract_standards::fungible_token::core::ext_ft_core;
+use near_contract_standards::storage_management::StorageBalance;
+use near_sdk::env::current_account_id;
+use near_sdk::{assert_one_yocto, ext_contract, PromiseOrValue};
 
 #[near_bindgen]
 impl BeneficiaryAction for TokenVestingContract {
@@ -19,8 +24,6 @@ impl BeneficiaryAction for TokenVestingContract {
             "Only owner and vesting beneficiary can set a new beneficiary."
         );
         let old_beneficiary = vesting.get_beneficiary();
-
-        self.internal_register_legacy(&new_beneficiary);
 
         vesting.set_beneficiary(new_beneficiary);
 
@@ -43,7 +46,52 @@ impl BeneficiaryAction for TokenVestingContract {
         .emit();
     }
 
-    fn claim(&mut self, vesting_id: VestingId, amount: Option<U128>) -> Balance {
+    fn claim(&mut self, vesting_id: VestingId, amount: Option<U128>) -> PromiseOrValue<U128> {
+        let vesting = self
+            .internal_get_vesting(&vesting_id)
+            .expect("No such vesting,id: #{}.");
+
+        PromiseOrValue::Promise(
+            ext_ft_core::ext(self.token_id.clone())
+                .ft_balance_of(current_account_id())
+                .and(
+                    ext_storage_management::ext(self.token_id.clone())
+                        .storage_balance_of(vesting.get_beneficiary()),
+                )
+                .then(Self::ext(env::current_account_id()).claim_callback(vesting_id, amount)),
+        )
+    }
+
+    fn claim_all(&mut self, beneficiary: Option<AccountId>) -> PromiseOrValue<U128> {
+        let beneficiary = beneficiary.unwrap_or(env::predecessor_account_id());
+
+        PromiseOrValue::Promise(
+            ext_ft_core::ext(self.token_id.clone())
+                .ft_balance_of(current_account_id())
+                .and(
+                    ext_storage_management::ext(self.token_id.clone())
+                        .storage_balance_of(beneficiary.clone()),
+                )
+                .then(Self::ext(env::current_account_id()).claim_all_callback(beneficiary)),
+        )
+    }
+}
+
+#[near_bindgen]
+impl TokenVestingContract {
+    #[private]
+    pub fn claim_callback(
+        &mut self,
+        vesting_id: VestingId,
+        amount: Option<U128>,
+        #[callback_unwrap] ft_balance: U128,
+        #[callback_unwrap] storage_balance: Option<StorageBalance>,
+    ) -> U128 {
+        assert!(
+            storage_balance.is_some(),
+            "Failed to claim because the beneficiary hasn't registered in vesting token contract."
+        );
+
         let mut vesting = self
             .internal_get_vesting(&vesting_id)
             .expect(format!("Failed to claim, no such vesting id: #{}", vesting_id.0).as_str());
@@ -52,18 +100,22 @@ impl BeneficiaryAction for TokenVestingContract {
 
         if vesting.is_release_finish() {
             self.internal_remove_vesting(&vesting_id);
+            VestingEvent::FinishVesting {
+                vesting_id: &vesting_id,
+            }
+            .emit();
         } else {
             self.internal_save_vesting(&vesting);
         }
 
-        // let (claimable_amount, beneficiary) = self.internal_use_vesting(&vesting_id, |vesting| {
-        //     (
-        //         vesting.claim(amount.map(|e| e.0)),
-        //         vesting.get_beneficiary(),
-        //     )
-        // });
         VestingEvent::UpdateVesting { vesting: &vesting }.emit();
         let transfer_id = self.internal_assign_id();
+
+        assert!(
+            ft_balance.0 >= claimable_amount,
+            "Failed to claim because the contract balance is not enough."
+        );
+
         UserAction::Claim {
             transfer_id: &transfer_id,
             vesting_id: &vesting_id,
@@ -72,17 +124,27 @@ impl BeneficiaryAction for TokenVestingContract {
             amount: &U128(claimable_amount),
         }
         .emit();
+
         self.internal_send_tokens(
             &beneficiary,
             &self.token_id.clone(),
             claimable_amount,
             Some(transfer_id),
         );
-        claimable_amount
+        U128(claimable_amount)
     }
 
-    fn claim_all(&mut self, beneficiary: Option<AccountId>) -> Balance {
-        let beneficiary = beneficiary.unwrap_or(env::predecessor_account_id());
+    #[private]
+    pub fn claim_all_callback(
+        &mut self,
+        beneficiary: AccountId,
+        #[callback_unwrap] ft_balance: U128,
+        #[callback_unwrap] storage_balance: Option<StorageBalance>,
+    ) -> U128 {
+        assert!(
+            storage_balance.is_some(),
+            "Failed to claim because the beneficiary hasn't registered in vesting token contract."
+        );
 
         let mut amount: u128 = 0;
         let vestings = self
@@ -93,7 +155,6 @@ impl BeneficiaryAction for TokenVestingContract {
 
         let mut claimed_vesting_ids: Vec<VestingId> = vec![];
         for mut vesting in vestings {
-            // for vesting in self.vestings.values().filter(|e|e.get_beneficiary().eq(&beneficiary)) {
             let vesting_id = vesting.get_vesting_id();
             let claimable_amount = vesting.claim(Option::None);
 
@@ -103,6 +164,10 @@ impl BeneficiaryAction for TokenVestingContract {
 
             if vesting.is_release_finish() {
                 self.internal_remove_vesting(&vesting_id);
+                VestingEvent::FinishVesting {
+                    vesting_id: &vesting_id,
+                }
+                .emit();
             } else {
                 self.internal_save_vesting(&vesting)
             }
@@ -113,8 +178,14 @@ impl BeneficiaryAction for TokenVestingContract {
             claimed_vesting_ids.push(vesting_id);
         }
 
-        if amount != 0 {
+        if amount > 0 {
             let transfer_id = self.internal_assign_id();
+
+            assert!(
+                ft_balance.0 >= amount,
+                "Failed to claim because the contract balance is not enough."
+            );
+
             UserAction::ClaimAll {
                 transfer_id: &transfer_id,
                 vesting_ids: &claimed_vesting_ids,
@@ -131,26 +202,6 @@ impl BeneficiaryAction for TokenVestingContract {
                 Some(transfer_id),
             );
         }
-        amount
-    }
-
-    fn withdraw_legacy(&mut self, account_id: Option<AccountId>) {
-        let account_id = account_id.unwrap_or(env::predecessor_account_id());
-        let balance = self.legacy.get(&account_id).unwrap_or(0);
-        let token_id = self.token_id.clone();
-        assert!(
-            balance > 0,
-            "Failed withdraw_legacy, the balance should more than 0."
-        );
-
-        let transfer_id = self.internal_assign_id();
-        UserAction::WithdrawLegacy {
-            account_id: &account_id,
-            token_id: &token_id,
-            amount: &U128(balance),
-            transfer_id: &transfer_id,
-        }
-        .emit();
-        self.internal_send_tokens(&account_id, &token_id, balance, Some(transfer_id));
+        U128(amount)
     }
 }

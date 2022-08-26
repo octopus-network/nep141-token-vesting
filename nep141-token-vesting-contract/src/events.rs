@@ -23,6 +23,9 @@ pub enum VestingEvent<'a> {
     TerminateVesting {
         vesting_id: &'a VestingId,
     },
+    FinishVesting {
+        vesting_id: &'a VestingId,
+    },
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -61,17 +64,10 @@ pub enum UserAction<'a> {
         token_id: &'a AccountId,
         amount: &'a U128,
     },
-
     Legacy {
         account_id: &'a AccountId,
         token_id: &'a AccountId,
         amount: &'a U128,
-    },
-    WithdrawLegacy {
-        account_id: &'a AccountId,
-        token_id: &'a AccountId,
-        amount: &'a U128,
-        transfer_id: &'a TransferId,
     },
 }
 

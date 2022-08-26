@@ -225,15 +225,6 @@ impl TokenVestingContract {
         let id = self.internal_assign_id();
         let prev_storage = env::storage_usage();
 
-        match &param {
-            VestingCreateParam::LinearVesting { beneficiary, .. } => {
-                self.internal_register_legacy(beneficiary);
-            }
-            VestingCreateParam::CliffVesting { beneficiary, .. } => {
-                self.internal_register_legacy(beneficiary);
-            }
-        };
-
         self.vestings.insert(&id, &Vesting::new(id.clone(), param));
         self.internal_check_storage(prev_storage);
         VestingEvent::CreateVesting {
@@ -246,8 +237,8 @@ impl TokenVestingContract {
     }
 
     pub(crate) fn internal_assign_id(&mut self) -> VestingId {
-        self.vesting_id += 1;
-        return U64(self.vesting_id);
+        self.uuid += 1;
+        return U64(self.uuid);
     }
 
     pub(crate) fn internal_remove_vesting(&mut self, vesting_id: &VestingId) {
