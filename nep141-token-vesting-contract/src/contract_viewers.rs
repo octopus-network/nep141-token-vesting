@@ -40,11 +40,11 @@ impl Viewer for TokenVestingContract {
             .into()
     }
 
-    fn get_all_claimable_amount(&self, beneficiary: AccountId) -> U128 {
+    fn get_all_claimable_amount(&self, beneficiary: Option<AccountId>) -> U128 {
         U128(
             self.vestings
                 .values()
-                .filter(|e| e.get_beneficiary().eq(&beneficiary))
+                .filter(|e| beneficiary.is_none()||e.get_beneficiary().eq(&beneficiary.as_ref().unwrap()))
                 .map(|e| e.get_claimable_amount())
                 .sum(),
         )

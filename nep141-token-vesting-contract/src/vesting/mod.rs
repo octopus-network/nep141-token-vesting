@@ -61,6 +61,7 @@ impl<T: NaturalTime + VestingTokenInfoTrait> VestingAmount for T {
             self.get_end_time() - get_block_second_time()
         };
         remain_time = min(remain_time, period);
+        // unreleased_amount / remain_time = total_vesting / period
         let unreleased_amount = U256::from(self.get_vesting_token_info().total_vesting_amount)
             * U256::from(remain_time)
             / U256::from(period);
@@ -236,7 +237,7 @@ impl TokenVestingContract {
         id
     }
 
-    pub(crate) fn internal_assign_id(&mut self) -> VestingId {
+    pub(crate) fn internal_assign_id(&mut self) -> U64 {
         self.uuid += 1;
         return U64(self.uuid);
     }

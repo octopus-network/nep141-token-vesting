@@ -15,7 +15,7 @@ pub trait Viewer {
 
     fn get_claimable_amount(&self, vesting_id: VestingId) -> U128;
 
-    fn get_all_claimable_amount(&self, beneficiary: AccountId) -> U128;
+    fn get_all_claimable_amount(&self, beneficiary: Option<AccountId>) -> U128;
 }
 
 pub trait OwnerAction {

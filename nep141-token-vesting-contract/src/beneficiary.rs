@@ -98,6 +98,11 @@ impl TokenVestingContract {
         let beneficiary = vesting.get_beneficiary();
         let claimable_amount = vesting.claim(amount.map(|e| e.0));
 
+        assert!(
+            ft_balance.0 >= claimable_amount,
+            "Failed to claim because the contract balance is not enough."
+        );
+
         if vesting.is_release_finish() {
             self.internal_remove_vesting(&vesting_id);
             VestingEvent::FinishVesting {
@@ -111,10 +116,7 @@ impl TokenVestingContract {
         VestingEvent::UpdateVesting { vesting: &vesting }.emit();
         let transfer_id = self.internal_assign_id();
 
-        assert!(
-            ft_balance.0 >= claimable_amount,
-            "Failed to claim because the contract balance is not enough."
-        );
+
 
         UserAction::Claim {
             transfer_id: &transfer_id,
@@ -179,12 +181,13 @@ impl TokenVestingContract {
         }
 
         if amount > 0 {
-            let transfer_id = self.internal_assign_id();
 
             assert!(
                 ft_balance.0 >= amount,
                 "Failed to claim because the contract balance is not enough."
             );
+
+            let transfer_id = self.internal_assign_id();
 
             UserAction::ClaimAll {
                 transfer_id: &transfer_id,
