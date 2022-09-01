@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "./nep141-token-vesting-contract",
+    "./test-token"
 ]
 
 [profile.release]

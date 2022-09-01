@@ -1,4 +1,4 @@
-use near_contract_standards::storage_management::{StorageBalance, StorageBalanceBounds};
+use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::ext_contract;
 use near_sdk::AccountId;
 

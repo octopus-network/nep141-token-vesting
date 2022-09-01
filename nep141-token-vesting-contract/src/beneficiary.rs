@@ -1,13 +1,13 @@
 use crate::events::{EventEmit, UserAction, VestingEvent};
 use crate::external::*;
-use crate::interfaces::{BeneficiaryAction, Viewer};
+use crate::interfaces::BeneficiaryAction;
 use crate::vesting::traits::{Beneficiary, Claimable, Finish};
 use crate::*;
 use crate::{TokenVestingContract, VestingId};
 use near_contract_standards::fungible_token::core::ext_ft_core;
 use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::env::current_account_id;
-use near_sdk::{assert_one_yocto, ext_contract, PromiseOrValue};
+use near_sdk::PromiseOrValue;
 
 #[near_bindgen]
 impl BeneficiaryAction for TokenVestingContract {
@@ -116,8 +116,6 @@ impl TokenVestingContract {
         VestingEvent::UpdateVesting { vesting: &vesting }.emit();
         let transfer_id = self.internal_assign_id();
 
-
-
         UserAction::Claim {
             transfer_id: &transfer_id,
             vesting_id: &vesting_id,
@@ -181,7 +179,6 @@ impl TokenVestingContract {
         }
 
         if amount > 0 {
-
             assert!(
                 ft_balance.0 >= amount,
                 "Failed to claim because the contract balance is not enough."

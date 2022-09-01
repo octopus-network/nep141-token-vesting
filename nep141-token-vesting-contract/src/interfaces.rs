@@ -1,7 +1,7 @@
 use crate::vesting::cliff::CliffVestingCheckpoint;
 use crate::{Vesting, VestingId};
 use near_sdk::json_types::{U128, U64};
-use near_sdk::{AccountId, Balance, PromiseOrValue};
+use near_sdk::{AccountId, PromiseOrValue};
 
 pub trait Viewer {
     fn get_vesting_token_id(&self) -> AccountId;

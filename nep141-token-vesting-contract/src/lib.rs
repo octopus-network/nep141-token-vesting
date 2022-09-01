@@ -1,10 +1,10 @@
-use crate::events::{EventEmit, UserAction};
+use crate::events::UserAction;
 use crate::interfaces::OwnerAction;
 use crate::types::VestingId;
 use crate::vesting::Vesting;
 use itertools::Itertools;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LookupMap, UnorderedMap};
+use near_sdk::collections::UnorderedMap;
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -12,24 +12,23 @@ use near_sdk::{
     StorageUsage,
 };
 
-mod beneficiary;
-mod constants;
-mod contract_viewers;
+pub mod beneficiary;
+pub mod constants;
+pub mod contract_viewers;
 pub mod events;
-mod external;
-mod fungible_token;
-mod interfaces;
-mod owner;
-mod types;
-mod utils;
-mod vesting;
+pub mod external;
+pub mod fungible_token;
+pub mod interfaces;
+pub mod owner;
+pub mod types;
+pub mod utils;
+pub mod vesting;
 
 use crate::utils::*;
 
 #[derive(BorshStorageKey, BorshSerialize)]
 pub(crate) enum StorageKey {
     Vestings,
-    Legacy,
 }
 
 #[near_bindgen]

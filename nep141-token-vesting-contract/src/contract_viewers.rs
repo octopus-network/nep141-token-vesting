@@ -44,7 +44,9 @@ impl Viewer for TokenVestingContract {
         U128(
             self.vestings
                 .values()
-                .filter(|e| beneficiary.is_none()||e.get_beneficiary().eq(&beneficiary.as_ref().unwrap()))
+                .filter(|e| {
+                    beneficiary.is_none() || e.get_beneficiary().eq(&beneficiary.as_ref().unwrap())
+                })
                 .map(|e| e.get_claimable_amount())
                 .sum(),
         )

@@ -3,8 +3,6 @@ use crate::events::{ActionStatus, EventEmit};
 use crate::types::TransferId;
 use crate::*;
 use near_contract_standards::fungible_token::core::ext_ft_core;
-use near_contract_standards::storage_management::{StorageBalance, StorageBalanceBounds};
-use near_sdk::ext_contract;
 use near_sdk::json_types::U128;
 use near_sdk::{Gas, PromiseResult, ONE_YOCTO};
 use std::ops::Mul;
