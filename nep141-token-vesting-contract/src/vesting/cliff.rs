@@ -13,6 +13,9 @@ pub struct TimeCliffVesting {
     pub time_cliff_list: Vec<CliffVestingCheckpoint>,
     pub vesting_token_info: VestingTokenInfo,
     pub is_frozen: bool,
+    #[serde(default)]
+    #[serde(with = "u64_dec_format")]
+    pub create_time: SecondTimeStamp
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
@@ -121,6 +124,7 @@ mod tests {
                 total_vesting_amount: 3,
             },
             is_frozen: false,
+            create_time: get_block_second_time()
         };
         assert_eq!(vesting.get_claimable_amount(), 2);
         vesting.claim(Some(2));

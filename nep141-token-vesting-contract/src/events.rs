@@ -127,6 +127,7 @@ mod tests {
     use near_sdk::json_types::U64;
     use near_sdk::test_utils;
     use near_sdk::test_utils::test_env::bob;
+    use crate::get_block_second_time;
 
     #[test]
     fn test_vesting() {
@@ -140,6 +141,7 @@ mod tests {
                     total_vesting_amount: 0,
                 },
                 is_frozen: false,
+                create_time: get_block_second_time()
             })),
             token_id: &usdt(),
         }
