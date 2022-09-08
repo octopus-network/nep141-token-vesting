@@ -191,7 +191,7 @@ impl Vesting {
                         total_vesting_amount,
                     },
                     is_frozen: false,
-                    create_time: get_block_second_time()
+                    create_time: get_block_second_time(),
                 })
             }
             VestingCreateParam::CliffVesting {
@@ -215,7 +215,7 @@ impl Vesting {
                         total_vesting_amount: total_amount,
                     },
                     is_frozen: false,
-                    create_time:get_block_second_time()
+                    create_time: get_block_second_time(),
                 })
             }
         }

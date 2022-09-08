@@ -29,7 +29,7 @@ pub trait ResultAssert {
 pub async fn setup_vesting<'s>(
     worker: &'s Worker<Sandbox>,
 ) -> (VestingContract<'s>, Nep141<'s>, Account, Account, Account) {
-    let root = worker.root_account();
+    let root = worker.root_account().expect("Failed to get root account.");
 
     let vesting_contract_account = register_account(&worker, &root, "vesting_contract").await;
     let owner = register_account(&worker, &root, "owner").await;
