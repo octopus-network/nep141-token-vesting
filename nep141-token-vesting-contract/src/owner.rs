@@ -1,9 +1,9 @@
-use crate::types::SecondTimeStamp;
+use crate::events::{EventEmit, UserAction, VestingEvent};
 use crate::vesting::cliff::CliffVestingCheckpoint;
 use crate::vesting::traits::Frozen;
 use crate::vesting::VestingCreateParam;
 use crate::*;
-use crate::{OwnerAction, TokenVestingContract, Vesting, VestingId};
+use crate::{OwnerAction, TokenVestingContract, VestingId};
 use near_contract_standards::upgrade::Ownable;
 use near_sdk::json_types::U64;
 
@@ -28,14 +28,12 @@ impl OwnerAction for TokenVestingContract {
         start_time: U64,
         end_time: U64,
         total_vesting_amount: U128,
-        token_id: AccountId,
     ) -> VestingId {
         self.internal_create_vesting(VestingCreateParam::LinearVesting {
             beneficiary,
             start_time: start_time.0,
             end_time: end_time.0,
             total_vesting_amount: total_vesting_amount.0,
-            token_id,
         })
     }
 
@@ -44,43 +42,52 @@ impl OwnerAction for TokenVestingContract {
         &mut self,
         beneficiary: AccountId,
         time_cliff_list: Vec<CliffVestingCheckpoint>,
-        token_id: AccountId,
     ) -> VestingId {
         self.internal_create_vesting(VestingCreateParam::CliffVesting {
             beneficiary,
             time_cliff_list,
-            token_id,
         })
     }
 
     fn freeze_vesting(&mut self, vesting_id: VestingId) {
         self.assert_owner();
-        self.internal_use_vesting(&vesting_id, |vesting| match vesting {
-            Vesting::NaturalTimeLinearVesting(linear_vesting) => {
-                linear_vesting.freeze();
-            }
-            Vesting::TimeCliffVesting(cliff_vesting) => {
-                cliff_vesting.freeze();
-            }
-        });
+        self.internal_use_vesting(&vesting_id, |vesting| vesting.freeze());
+        VestingEvent::UpdateVesting {
+            vesting: &self
+                .internal_get_vesting(&vesting_id)
+                .expect(format!("Failed to get vesting by id: {}.", vesting_id.0).as_str()),
+        }
+        .emit();
+        UserAction::FreezeVesting {
+            vesting_id: &vesting_id,
+        }
+        .emit();
     }
 
     fn unfreeze_vesting(&mut self, vesting_id: VestingId) {
         self.assert_owner();
-        self.internal_use_vesting(&vesting_id, |vesting| match vesting {
-            Vesting::NaturalTimeLinearVesting(linear_vesting) => {
-                linear_vesting.unfreeze();
-            }
-            Vesting::TimeCliffVesting(cliff_vesting) => {
-                cliff_vesting.unfreeze();
-            }
-        });
+
+        self.internal_use_vesting(&vesting_id, |vesting| vesting.unfreeze());
+        VestingEvent::UpdateVesting {
+            vesting: &self
+                .internal_get_vesting(&vesting_id)
+                .expect(format!("Failed to get vesting by id: {}.", vesting_id.0).as_str()),
+        }
+        .emit();
+        UserAction::UnfreezeVesting {
+            vesting_id: &vesting_id,
+        }
+        .emit();
     }
 
     fn terminate_vesting(&mut self, vesting_id: VestingId) {
         self.assert_owner();
 
-        // todo , need log
         self.vestings.remove(&vesting_id);
+
+        UserAction::TerminateVesting {
+            vesting_id: &vesting_id,
+        }
+        .emit();
     }
 }

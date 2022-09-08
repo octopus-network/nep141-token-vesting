@@ -1,3 +1,4 @@
+use near_sdk::json_types::U64;
 use uint::construct_uint;
 
 construct_uint! {
@@ -6,4 +7,5 @@ construct_uint! {
 }
 
 pub type SecondTimeStamp = u64;
-pub type VestingId = u64;
+pub type VestingId = U64;
+pub type TransferId = U64;
