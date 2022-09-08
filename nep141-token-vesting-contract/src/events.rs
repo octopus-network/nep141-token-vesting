@@ -120,6 +120,7 @@ pub(crate) fn emit_event<T: ?Sized + Serialize>(data: &T) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::get_block_second_time;
     use crate::test::{usdc, usdt};
     use crate::vesting::cliff::TimeCliffVesting;
     use crate::vesting::VestingTokenInfo;
@@ -140,6 +141,7 @@ mod tests {
                     total_vesting_amount: 0,
                 },
                 is_frozen: false,
+                create_time: get_block_second_time(),
             })),
             token_id: &usdt(),
         }

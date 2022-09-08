@@ -16,6 +16,9 @@ pub struct NaturalTimeLinearVesting {
     pub end_time: SecondTimeStamp,
     pub vesting_token_info: VestingTokenInfo,
     pub is_frozen: bool,
+    #[serde(default)]
+    #[serde(with = "u64_dec_format")]
+    pub create_time: SecondTimeStamp,
 }
 
 impl NaturalTimeLinearVesting {}
@@ -101,6 +104,7 @@ mod tests {
                 total_vesting_amount: 100,
             },
             is_frozen: false,
+            create_time: get_block_second_time(),
         };
         assert_eq!(
             vesting.get_claimable_amount(),
