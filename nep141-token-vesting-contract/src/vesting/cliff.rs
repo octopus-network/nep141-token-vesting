@@ -18,7 +18,7 @@ pub struct TimeCliffVesting {
     pub create_time: SecondTimeStamp,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CliffVestingCheckpoint {
     #[serde(default)]

@@ -33,6 +33,11 @@ impl Viewer for TokenVestingContract {
             .collect_vec()
     }
 
+    fn get_vesting_by_id(&self, vesting_id: VestingId) -> Vesting {
+        self.internal_get_vesting(&vesting_id)
+            .expect(format!("Failed to get vesting, id: #{}", vesting_id.0).as_str())
+    }
+
     fn get_claimable_amount(&self, vesting_id: VestingId) -> U128 {
         self.internal_get_vesting(&vesting_id)
             .expect("No such vesting.")

@@ -13,6 +13,8 @@ pub trait Viewer {
         beneficiary: Option<AccountId>,
     ) -> Vec<Vesting>;
 
+    fn get_vesting_by_id(&self, vesting_id: VestingId) -> Vesting;
+
     fn get_claimable_amount(&self, vesting_id: VestingId) -> U128;
 
     fn get_all_claimable_amount(&self, beneficiary: Option<AccountId>) -> U128;
