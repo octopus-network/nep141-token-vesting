@@ -77,7 +77,7 @@ pub async fn deploy_test_token_contract(
         .unwrap();
     deploy_account
         .call(worker, deploy_account.id(), "new")
-        .args_json(())
+        .args_json(json!({}))
         .unwrap()
         .transact()
         .await
