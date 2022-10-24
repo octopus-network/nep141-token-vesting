@@ -44,7 +44,7 @@ pub trait VestingAmount: VestingTokenInfoTrait {
 }
 
 pub trait Claimable {
-    fn claim(&mut self, amount: Option<Balance>) -> Balance;
+    fn claim(&mut self) -> Balance;
 }
 
 pub trait Finish: VestingTokenInfoTrait {

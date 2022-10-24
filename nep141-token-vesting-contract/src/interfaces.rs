@@ -43,7 +43,7 @@ pub trait OwnerAction {
 pub trait BeneficiaryAction {
     fn change_beneficiary(&mut self, vesting_id: VestingId, new_beneficiary: AccountId);
 
-    fn claim(&mut self, vesting_id: VestingId, amount: Option<U128>) -> PromiseOrValue<U128>;
+    fn claim(&mut self, vesting_id: VestingId) -> PromiseOrValue<U128>;
 
     fn claim_all(&mut self, beneficiary: Option<AccountId>) -> PromiseOrValue<U128>;
 }

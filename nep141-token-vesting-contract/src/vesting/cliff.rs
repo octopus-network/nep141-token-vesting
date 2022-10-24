@@ -105,7 +105,6 @@ mod tests {
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::testing_env;
 
-    #[should_panic]
     #[test]
     fn test_cliff_claim() {
         let mut context = VMContextBuilder::new();
@@ -127,9 +126,7 @@ mod tests {
             create_time: get_block_second_time(),
         };
         assert_eq!(vesting.get_claimable_amount(), 2);
-        vesting.claim(Some(2));
+        vesting.claim();
         assert_eq!(vesting.get_claimable_amount(), 0);
-        vesting.claim(Option::None);
-        vesting.claim(Some(1));
     }
 }
