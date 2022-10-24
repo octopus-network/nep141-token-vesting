@@ -18,6 +18,12 @@ impl BeneficiaryAction for TokenVestingContract {
         let mut vesting = self
             .internal_get_vesting(&vesting_id)
             .expect("No such vesting.");
+
+        assert!(
+            new_beneficiary.ne(&vesting.get_beneficiary()),
+            "The new beneficiary should be different from old beneficiary."
+        );
+
         assert!(
             env::predecessor_account_id().eq(&vesting.get_beneficiary())
                 || env::predecessor_account_id().eq(&self.owner),
