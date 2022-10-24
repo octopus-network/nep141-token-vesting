@@ -128,7 +128,7 @@ impl TokenVestingContract {
             &beneficiary,
             &self.token_id.clone(),
             claimable_amount,
-            Some(transfer_id),
+            transfer_id,
         );
         U128(claimable_amount)
     }
@@ -194,12 +194,7 @@ impl TokenVestingContract {
             }
             .emit();
 
-            self.internal_send_tokens(
-                &beneficiary,
-                &self.token_id.clone(),
-                amount,
-                Some(transfer_id),
-            );
+            self.internal_send_tokens(&beneficiary, &self.token_id.clone(), amount, transfer_id);
         }
         U128(amount)
     }
