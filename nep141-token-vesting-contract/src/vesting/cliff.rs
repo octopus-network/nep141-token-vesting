@@ -37,7 +37,7 @@ impl Finish for TimeCliffVesting {
             .map(|e| e.time)
             .max()
             .unwrap_or(0);
-        return max_time < get_block_second_time();
+        return max_time <= get_block_second_time();
     }
 }
 
@@ -83,10 +83,11 @@ impl VestingTokenInfoTrait for TimeCliffVesting {
 
 impl VestingAmount for TimeCliffVesting {
     fn get_unreleased_amount(&self) -> Balance {
+        let block_second_time = get_block_second_time();
         self.time_cliff_list
             .iter()
             .map(|e| {
-                if e.time > get_block_second_time() {
+                if e.time > block_second_time {
                     e.amount
                 } else {
                     0

@@ -25,7 +25,7 @@ impl NaturalTimeLinearVesting {}
 
 impl Finish for NaturalTimeLinearVesting {
     fn is_release_finish(&self) -> bool {
-        self.end_time < get_block_second_time()
+        self.end_time <= get_block_second_time()
     }
 }
 
