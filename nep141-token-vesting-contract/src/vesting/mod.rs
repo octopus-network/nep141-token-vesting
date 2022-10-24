@@ -70,21 +70,15 @@ impl<T: NaturalTime + VestingTokenInfoTrait> VestingAmount for T {
 }
 
 impl<T: VestingAmount + VestingTokenInfoTrait + Frozen> Claimable for T {
-    fn claim(&mut self, amount: Option<Balance>) -> Balance {
+    fn claim(&mut self) -> Balance {
         assert!(
             !self.is_frozen(),
             "Failed to claim because this vesting is frozen."
         );
         let claimable_amount = self.get_claimable_amount();
-        if amount.is_some() {
-            assert!(
-                amount.unwrap() <= claimable_amount,
-                "claimable amount is less than claim amount."
-            );
-        }
 
         self.set_claimed_token_amount(
-            self.get_vesting_token_info().claimed_token_amount + amount.unwrap_or(claimable_amount),
+            self.get_vesting_token_info().claimed_token_amount + claimable_amount,
         );
         claimable_amount
     }

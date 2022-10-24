@@ -37,7 +37,7 @@ impl Finish for TimeCliffVesting {
             .map(|e| e.time)
             .max()
             .unwrap_or(0);
-        return max_time < get_block_second_time();
+        return max_time <= get_block_second_time();
     }
 }
 
@@ -83,10 +83,11 @@ impl VestingTokenInfoTrait for TimeCliffVesting {
 
 impl VestingAmount for TimeCliffVesting {
     fn get_unreleased_amount(&self) -> Balance {
+        let block_second_time = get_block_second_time();
         self.time_cliff_list
             .iter()
             .map(|e| {
-                if e.time > get_block_second_time() {
+                if e.time > block_second_time {
                     e.amount
                 } else {
                     0
@@ -105,7 +106,6 @@ mod tests {
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::testing_env;
 
-    #[should_panic]
     #[test]
     fn test_cliff_claim() {
         let mut context = VMContextBuilder::new();
@@ -127,9 +127,7 @@ mod tests {
             create_time: get_block_second_time(),
         };
         assert_eq!(vesting.get_claimable_amount(), 2);
-        vesting.claim(Some(2));
+        vesting.claim();
         assert_eq!(vesting.get_claimable_amount(), 0);
-        vesting.claim(Option::None);
-        vesting.claim(Some(1));
     }
 }

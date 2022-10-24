@@ -25,7 +25,7 @@ impl NaturalTimeLinearVesting {}
 
 impl Finish for NaturalTimeLinearVesting {
     fn is_release_finish(&self) -> bool {
-        self.end_time < get_block_second_time()
+        self.end_time <= get_block_second_time()
     }
 }
 
@@ -87,7 +87,6 @@ mod tests {
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::testing_env;
 
-    #[should_panic("claimable amount is less than claim amount.")]
     #[test]
     fn test_linear() {
         let mut context = VMContextBuilder::new();
@@ -111,15 +110,11 @@ mod tests {
             10,
             "claimable amount should be 10."
         );
-        vesting.claim(Some(5));
+        vesting.claim();
         assert_eq!(
             vesting.get_claimable_amount(),
-            5,
-            "claimable amount should be 5."
+            0,
+            "claimable amount should be 0."
         );
-
-        // should panic
-        vesting.claim(Some(15));
-        // assert_eq!(a.get_claimable_amount(), 1);
     }
 }

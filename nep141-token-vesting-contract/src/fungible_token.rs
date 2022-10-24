@@ -14,7 +14,7 @@ impl TokenVestingContract {
         receiver_id: &AccountId,
         token_id: &AccountId,
         amount: Balance,
-        transfer_id: Option<TransferId>,
+        transfer_id: TransferId,
     ) {
         assert!(amount > 0, "Failed to send tokens because amount is 0.");
         ext_ft_core::ext(token_id.clone())
@@ -39,7 +39,7 @@ impl TokenVestingContract {
         token_id: AccountId,
         receiver_id: AccountId,
         amount: U128,
-        transfer_id: Option<TransferId>,
+        transfer_id: TransferId,
     ) {
         assert_eq!(
             env::promise_results_count(),
@@ -54,23 +54,17 @@ impl TokenVestingContract {
         );
         match env::promise_result(0) {
             PromiseResult::NotReady => unreachable!(),
-            PromiseResult::Successful(_) => {
-                if transfer_id.is_some() {
-                    ActionStatus::FtTransferResult {
-                        transfer_id: &transfer_id.unwrap(),
-                        is_success: &true,
-                    }
-                    .emit()
-                }
+            PromiseResult::Successful(_) => ActionStatus::FtTransferResult {
+                transfer_id: &transfer_id,
+                is_success: &true,
             }
+            .emit(),
             PromiseResult::Failed => {
-                if transfer_id.is_some() {
-                    ActionStatus::FtTransferResult {
-                        transfer_id: &transfer_id.unwrap(),
-                        is_success: &false,
-                    }
-                    .emit()
+                ActionStatus::FtTransferResult {
+                    transfer_id: &transfer_id,
+                    is_success: &false,
                 }
+                .emit();
 
                 UserAction::Legacy {
                     account_id: &receiver_id,

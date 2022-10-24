@@ -18,6 +18,12 @@ impl BeneficiaryAction for TokenVestingContract {
         let mut vesting = self
             .internal_get_vesting(&vesting_id)
             .expect("No such vesting.");
+
+        assert!(
+            new_beneficiary.ne(&vesting.get_beneficiary()),
+            "The new beneficiary should be different from old beneficiary."
+        );
+
         assert!(
             env::predecessor_account_id().eq(&vesting.get_beneficiary())
                 || env::predecessor_account_id().eq(&self.owner),
@@ -46,7 +52,7 @@ impl BeneficiaryAction for TokenVestingContract {
         .emit();
     }
 
-    fn claim(&mut self, vesting_id: VestingId, amount: Option<U128>) -> PromiseOrValue<U128> {
+    fn claim(&mut self, vesting_id: VestingId) -> PromiseOrValue<U128> {
         let vesting = self
             .internal_get_vesting(&vesting_id)
             .expect("No such vesting,id: #{}.");
@@ -58,7 +64,7 @@ impl BeneficiaryAction for TokenVestingContract {
                     ext_storage_management::ext(self.token_id.clone())
                         .storage_balance_of(vesting.get_beneficiary()),
                 )
-                .then(Self::ext(env::current_account_id()).claim_callback(vesting_id, amount)),
+                .then(Self::ext(env::current_account_id()).claim_callback(vesting_id)),
         )
     }
 
@@ -83,7 +89,6 @@ impl TokenVestingContract {
     pub fn claim_callback(
         &mut self,
         vesting_id: VestingId,
-        amount: Option<U128>,
         #[callback_unwrap] ft_balance: U128,
         #[callback_unwrap] storage_balance: Option<StorageBalance>,
     ) -> U128 {
@@ -96,14 +101,14 @@ impl TokenVestingContract {
             .internal_get_vesting(&vesting_id)
             .expect(format!("Failed to claim, no such vesting id: #{}", vesting_id.0).as_str());
         let beneficiary = vesting.get_beneficiary();
-        let claimable_amount = vesting.claim(amount.map(|e| e.0));
+        let claimable_amount = vesting.claim();
 
         assert!(
             ft_balance.0 >= claimable_amount,
             "Failed to claim because the contract balance is not enough."
         );
 
-        if vesting.is_release_finish() {
+        if vesting.is_vesting_finish() {
             self.internal_remove_vesting(&vesting_id);
             VestingEvent::FinishVesting {
                 vesting_id: &vesting_id,
@@ -129,7 +134,7 @@ impl TokenVestingContract {
             &beneficiary,
             &self.token_id.clone(),
             claimable_amount,
-            Some(transfer_id),
+            transfer_id,
         );
         U128(claimable_amount)
     }
@@ -156,13 +161,13 @@ impl TokenVestingContract {
         let mut claimed_vesting_ids: Vec<VestingId> = vec![];
         for mut vesting in vestings {
             let vesting_id = vesting.get_vesting_id();
-            let claimable_amount = vesting.claim(Option::None);
+            let claimable_amount = vesting.claim();
 
             if claimable_amount == 0 {
                 continue;
             }
 
-            if vesting.is_release_finish() {
+            if vesting.is_vesting_finish() {
                 self.internal_remove_vesting(&vesting_id);
                 VestingEvent::FinishVesting {
                     vesting_id: &vesting_id,
@@ -195,12 +200,7 @@ impl TokenVestingContract {
             }
             .emit();
 
-            self.internal_send_tokens(
-                &beneficiary,
-                &self.token_id.clone(),
-                amount,
-                Some(transfer_id),
-            );
+            self.internal_send_tokens(&beneficiary, &self.token_id.clone(), amount, transfer_id);
         }
         U128(amount)
     }

@@ -44,13 +44,14 @@ pub trait VestingAmount: VestingTokenInfoTrait {
 }
 
 pub trait Claimable {
-    fn claim(&mut self, amount: Option<Balance>) -> Balance;
+    fn claim(&mut self) -> Balance;
 }
 
 pub trait Finish: VestingTokenInfoTrait {
     fn is_release_finish(&self) -> bool;
     fn is_vesting_finish(&self) -> bool {
-        self.get_vesting_token_info().total_vesting_amount
-            == self.get_vesting_token_info().claimed_token_amount
+        self.is_release_finish()
+            && self.get_vesting_token_info().total_vesting_amount
+                == self.get_vesting_token_info().claimed_token_amount
     }
 }
