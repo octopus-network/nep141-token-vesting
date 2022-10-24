@@ -50,7 +50,8 @@ pub trait Claimable {
 pub trait Finish: VestingTokenInfoTrait {
     fn is_release_finish(&self) -> bool;
     fn is_vesting_finish(&self) -> bool {
-        self.get_vesting_token_info().total_vesting_amount
-            == self.get_vesting_token_info().claimed_token_amount
+        self.is_release_finish()
+            && self.get_vesting_token_info().total_vesting_amount
+                == self.get_vesting_token_info().claimed_token_amount
     }
 }

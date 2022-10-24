@@ -102,7 +102,7 @@ impl TokenVestingContract {
             "Failed to claim because the contract balance is not enough."
         );
 
-        if vesting.is_release_finish() {
+        if vesting.is_vesting_finish() {
             self.internal_remove_vesting(&vesting_id);
             VestingEvent::FinishVesting {
                 vesting_id: &vesting_id,
@@ -161,7 +161,7 @@ impl TokenVestingContract {
                 continue;
             }
 
-            if vesting.is_release_finish() {
+            if vesting.is_vesting_finish() {
                 self.internal_remove_vesting(&vesting_id);
                 VestingEvent::FinishVesting {
                     vesting_id: &vesting_id,
