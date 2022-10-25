@@ -7,12 +7,13 @@ Contents:
 - [Terminology](#terminology)
 - [Function specification](#function-specification)
   - [Create a vesting](#create-a-vesting)
-  - [Pause and resume a vesting](#pause-and-resume-vesting)
+  - [Pause and resume a vesting](#pause-and-resume-a-vesting)
   - [Terminate a vesting](#terminate-a-vesting)
   - [Claim tokens](#claim-tokens)
   - [Change beneficiary of a vesting](#change-beneficiary-of-a-vesting)
   - [Withdraw remaining tokens in the contract](#withdraw-remaining-tokens-in-the-contract)
   - [View functions](#view-functions)
+- [Auditing](#auditing)
 
 ## Terminology
 
@@ -60,3 +61,7 @@ The owner can withdraw the remaining tokens in this contract only if there is no
 This contract has a set of view functions for anyone to get the status detail of this contract.
 
 > Maybe should add a view function for beneficiary to query the claimable amount of a vesting or the total claimable amount in all vestings.
+
+## Auditing
+
+This contract has completed auditing by [Blocksec](https://blocksec.com). The report is [here](blocksec-octopus-vesting-v1.0_signed.pdf).
