@@ -80,6 +80,26 @@ impl<'s> VestingContract<'s> {
             .unwrap()
     }
 
+    pub async fn get_vesting_by_id(
+        &self,
+        id: VestingId,
+    ) -> nep141_token_vesting_contract::vesting::Vesting {
+        self.worker
+            .view(
+                &self.contract_id,
+                "get_vesting_by_id",
+                json!({
+                    "vesting_id": id,
+                })
+                .to_string()
+                .into_bytes(),
+            )
+            .await
+            .unwrap()
+            .json()
+            .unwrap()
+    }
+
     pub async fn get_claimable_amount(
         &self,
         vesting_id: nep141_token_vesting_contract::types::VestingId,
@@ -156,7 +176,7 @@ impl<'s> VestingContract<'s> {
     }
 
     pub async fn freeze_vesting(
-        &mut self,
+        &self,
         signer: &workspaces::Account,
         vesting_id: VestingId,
     ) -> anyhow::Result<CallExecutionDetails> {
@@ -170,7 +190,7 @@ impl<'s> VestingContract<'s> {
     }
 
     pub async fn unfreeze_vesting(
-        &mut self,
+        &self,
         signer: &workspaces::Account,
         vesting_id: VestingId,
     ) -> anyhow::Result<CallExecutionDetails> {
@@ -184,7 +204,7 @@ impl<'s> VestingContract<'s> {
     }
 
     pub async fn terminate_vesting(
-        &mut self,
+        &self,
         signer: &workspaces::Account,
         vesting_id: VestingId,
     ) -> anyhow::Result<CallExecutionDetails> {
@@ -205,6 +225,7 @@ impl<'s> VestingContract<'s> {
     ) -> anyhow::Result<CallExecutionDetails> {
         signer
             .call(self.worker, &self.contract_id, "change_beneficiary")
+            .deposit(ONE_NEAR)
             .args_json(json!({
                 "vesting_id": vesting_id,
                 "new_beneficiary": new_beneficiary

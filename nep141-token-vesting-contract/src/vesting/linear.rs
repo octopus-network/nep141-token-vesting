@@ -90,14 +90,14 @@ mod tests {
     #[test]
     fn test_linear() {
         let mut context = VMContextBuilder::new();
-        testing_env!(context.block_timestamp(1654595929 * 1000_000_000).build());
+        testing_env!(context.block_timestamp(1 * 1000_000_000).build());
 
         let mut vesting = NaturalTimeLinearVesting {
             id: U64(0),
             beneficiary: bob(),
-            start_time: 1654585929,
+            start_time: 1,
             // 1654595929
-            end_time: 1654686929,
+            end_time: 10,
             vesting_token_info: VestingTokenInfo {
                 claimed_token_amount: 0,
                 total_vesting_amount: 100,
@@ -105,16 +105,41 @@ mod tests {
             is_frozen: false,
             create_time: get_block_second_time(),
         };
-        assert_eq!(
-            vesting.get_claimable_amount(),
-            10,
-            "claimable amount should be 10."
-        );
-        vesting.claim();
-        assert_eq!(
-            vesting.get_claimable_amount(),
-            0,
-            "claimable amount should be 0."
-        );
+
+        testing_env!(context.block_timestamp(1000_000_00).build());
+        assert_eq!(vesting.get_claimable_amount(), 0);
+
+        testing_env!(context.block_timestamp(1 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 10);
+
+        testing_env!(context.block_timestamp(2 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 20);
+
+        testing_env!(context.block_timestamp(3 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 30);
+
+        testing_env!(context.block_timestamp(4 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 40);
+
+        testing_env!(context.block_timestamp(5 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 50);
+
+        testing_env!(context.block_timestamp(6 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 60);
+
+        testing_env!(context.block_timestamp(7 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 70);
+
+        testing_env!(context.block_timestamp(8 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 80);
+
+        testing_env!(context.block_timestamp(9 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 90);
+
+        testing_env!(context.block_timestamp(10 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 100);
+
+        testing_env!(context.block_timestamp(11 * 1000_000_000).build());
+        assert_eq!(vesting.get_claimable_amount(), 100);
     }
 }

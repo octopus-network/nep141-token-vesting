@@ -55,7 +55,7 @@ impl BeneficiaryAction for TokenVestingContract {
     fn claim(&mut self, vesting_id: VestingId) -> PromiseOrValue<U128> {
         let vesting = self
             .internal_get_vesting(&vesting_id)
-            .expect("No such vesting,id: #{}.");
+            .expect(format!("No such vesting id: #{}.", vesting_id.0).as_str());
 
         PromiseOrValue::Promise(
             ext_ft_core::ext(self.token_id.clone())
